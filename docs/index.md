@@ -1,4 +1,4 @@
-<!-- sync:intro:start -->
+<!-- sync:intro -->
 # UnionConfig
 
 Type-safe configuration management for F# applications. Define your config variables as discriminated unions, then read from environment variables, `.env` files, or AWS SSM Parameter Store with automatic parsing, validation, and secret masking.
@@ -76,9 +76,9 @@ dotnet add package UnionConfig.Ssm
 dotnet add package UnionConfig.TextEditor
 ```
 
-**[API Documentation](reference/index.html)**
+**[API Reference](reference/index.html)**
 
-<!-- sync:reading:start -->
+<!-- sync:reading -->
 ## Reading Config from Environment
 
 From [`examples/ExampleApp/Program.fs`](examples/ExampleApp/Program.fs):
@@ -113,7 +113,7 @@ match read (configDef RequestTimeout) with
 ```
 <!-- sync:reading:end -->
 
-<!-- sync:extraction:start -->
+<!-- sync:extraction -->
 ## ConfigValue Extraction Helpers
 
 Pipeline-friendly typed extraction from `ConfigValue option`:
@@ -151,7 +151,7 @@ let levelOpt = read (configDef LogLevel) |> ConfigValue.customOption parseLogLev
 ```
 <!-- sync:extraction:end -->
 
-<!-- sync:validation:start -->
+<!-- sync:validation -->
 ## Validation
 
 ```fsharp
@@ -165,7 +165,7 @@ let errors2 = validateRequired allDefs
 ```
 <!-- sync:validation:end -->
 
-<!-- sync:envfile:start -->
+<!-- sync:envfile -->
 ## .env File Operations
 
 ```fsharp
@@ -189,7 +189,7 @@ displayChanges changes
 `secretKeyIndicators` controls which key names trigger masking: `PASSWORD`, `SECRET`, `KEY`, `API_KEY`, `SIGNING`, `TOKEN`.
 <!-- sync:envfile:end -->
 
-<!-- sync:verification:start -->
+<!-- sync:verification -->
 ## Verification
 
 ```fsharp
@@ -218,7 +218,7 @@ displayVerificationResults results
 ```
 <!-- sync:verification:end -->
 
-<!-- sync:ssm:start -->
+<!-- sync:ssm -->
 ## AWS SSM Parameter Store
 
 ```fsharp
@@ -261,7 +261,7 @@ let results = applyChanges store changes
 ```
 <!-- sync:ssm:end -->
 
-<!-- sync:texteditor:start -->
+<!-- sync:texteditor -->
 ## Interactive Editor Workflow
 
 ```fsharp
@@ -287,9 +287,9 @@ editConfig loadConfigFn setValueFn writeConfigFileFn verifyChangesFn
 
 ## Reference
 
-See the [Example App](examples/ExampleApp/Program.fs) for a complete working example covering the full public API. Run it with `mise run example`.
+See the [Example App](https://github.com/michaelglass/union-config/tree/main/examples/ExampleApp) for a complete working example covering the full public API.
 
-<!-- sync:types:start -->
+<!-- sync:types -->
 ### Core Types
 
 ```fsharp
@@ -313,7 +313,7 @@ type ConfigValue = StringValue of string | IntValue of int | BoolValue of bool |
 ```
 <!-- sync:types:end -->
 
-<!-- sync:keyfunctions:start -->
+<!-- sync:keyfunctions -->
 ### Key Functions
 
 ```fsharp
@@ -354,7 +354,7 @@ parseValue : ConfigValueType -> string -> Result<ConfigValue, string>
 ```
 <!-- sync:keyfunctions:end -->
 
-<!-- sync:license:start -->
+<!-- sync:license -->
 ## License
 
 MIT
