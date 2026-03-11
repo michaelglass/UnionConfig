@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Package metadata -->
+    <PackageId>UnionConfig</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Michael Glass</Authors>
+    <Description>Type-safe configuration management using F# discriminated unions</Description>
+    <PackageTags>fsharp;configuration;discriminated-union;env;dotenv</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/michaelglass/union-config</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>5</WarningLevel>
+    <!-- NETSDK1188: harmless locale warnings from FSharp.Core -->
+    <NoWarn>$(NoWarn);NETSDK1188</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>UnionConfig.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!-- F# source files - ORDER MATTERS -->
+  <ItemGroup>
+    <Compile Include="Types.fs" />
+    <Compile Include="Verification.fs" />
+    <Compile Include="Reader.fs" />
+    <Compile Include="EnvFile.fs" />
+  </ItemGroup>
+</Project>
