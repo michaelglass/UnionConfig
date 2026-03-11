@@ -39,6 +39,7 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
+          Group = None
           Doc =
             { Description = "PostgreSQL connection string"
               HowToFind = "Check your database provider dashboard"
@@ -49,6 +50,7 @@ let configDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
+          Group = None
           Doc =
             { Description = "Database port number"
               HowToFind = "Usually 5432 for PostgreSQL"
@@ -59,6 +61,7 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = true
+          Group = None
           Doc =
             { Description = "External API key for third-party service"
               HowToFind = "Generate at https://dashboard.example.com/keys"
@@ -69,6 +72,7 @@ let configDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
+          Group = None
           Doc =
             { Description = "Maximum retry attempts for failed requests"
               HowToFind = "Set to desired retry count (default: 3)"
@@ -79,6 +83,7 @@ let configDef =
           ValueType = BoolType
           Requirement = Optional
           IsSecret = false
+          Group = None
           Doc =
             { Description = "Enable debug logging"
               HowToFind = "Set to true or 1 to enable"
@@ -99,6 +104,7 @@ let configDef =
             )
           Requirement = Optional
           IsSecret = false
+          Group = None
           Doc =
             { Description = "Application log level"
               HowToFind = "One of: debug, info, warn, error"
@@ -109,6 +115,7 @@ let configDef =
           ValueType = BoolType
           Requirement = Optional
           IsSecret = false
+          Group = None
           Doc =
             { Description = "Feature flag: enable new UI"
               HowToFind = "Set to true to enable the redesigned UI"
@@ -119,6 +126,7 @@ let configDef =
           ValueType = FloatType
           Requirement = Optional
           IsSecret = false
+          Group = None
           Doc =
             { Description = "HTTP request timeout in seconds"
               HowToFind = "Set to desired timeout (default: 30.0)"
@@ -129,6 +137,7 @@ let configDef =
           ValueType = StringType
           Requirement = Optional
           IsSecret = false
+          Group = None
           Doc =
             { Description = "Redis cache hostname set by infrastructure"
               HowToFind = "Automatically provisioned by CloudFormation"
@@ -139,6 +148,7 @@ let configDef =
           ValueType = StringType
           Requirement = Optional
           IsSecret = true
+          Group = None
           Doc =
             { Description = "Webhook signing secret"
               HowToFind = "Auto-provisioned during service setup"
@@ -199,13 +209,13 @@ let demoReadFromEnv () =
     let newUi = readBoolOrDefault (configDef FeatureNewUi) false
     printfn "  FEATURE_NEW_UI:    %b" newUi
 
-    // read: returns ConfigValue option for pattern matching
+    // read: returns Result<ConfigValue option, string> for pattern matching
     match read (configDef LogLevel) with
-    | Some(StringValue level) -> printfn "  LOG_LEVEL:         %s" level
+    | Ok(Some(StringValue level)) -> printfn "  LOG_LEVEL:         %s" level
     | _ -> printfn "  LOG_LEVEL:         (not set)"
 
     match read (configDef RequestTimeout) with
-    | Some(FloatValue timeout) -> printfn "  REQUEST_TIMEOUT:   %.1f" timeout
+    | Ok(Some(FloatValue timeout)) -> printfn "  REQUEST_TIMEOUT:   %.1f" timeout
     | _ -> printfn "  REQUEST_TIMEOUT:   (not set)"
 
     let cacheHost = readString (configDef CacheHost)
@@ -221,36 +231,44 @@ let demoConfigValueHelpers () =
     printfn "== ConfigValue Extraction Helpers =="
     printfn ""
 
+    /// Unwrap a Result from read, throwing on Error.
+    let unwrapRead result =
+        match result with
+        | Ok v -> v
+        | Error(msg: string) -> failwithf "Configuration error: %s" msg
+
     // ConfigValue.string: extract string (required, fails if None)
-    let dbUrl = read (configDef DatabaseUrl) |> ConfigValue.string
+    let dbUrl = read (configDef DatabaseUrl) |> unwrapRead |> ConfigValue.string
     printfn "  ConfigValue.string:       %s" dbUrl
 
     // ConfigValue.stringOption: extract string (optional, returns None if missing)
-    let cacheHost = read (configDef CacheHost) |> ConfigValue.stringOption
+    let cacheHost = read (configDef CacheHost) |> unwrapRead |> ConfigValue.stringOption
     printfn "  ConfigValue.stringOption:  %A" cacheHost
 
     // ConfigValue.int: extract int (required)
-    let retries = read (configDef MaxRetries) |> ConfigValue.int
+    let retries = read (configDef MaxRetries) |> unwrapRead |> ConfigValue.int
     printfn "  ConfigValue.int:          %d" retries
 
     // ConfigValue.intOption: extract int (optional)
-    let portOpt = read (configDef DatabasePort) |> ConfigValue.intOption
+    let portOpt = read (configDef DatabasePort) |> unwrapRead |> ConfigValue.intOption
     printfn "  ConfigValue.intOption:    %A" portOpt
 
     // ConfigValue.bool: extract bool (required)
-    let debug = read (configDef DebugMode) |> ConfigValue.bool
+    let debug = read (configDef DebugMode) |> unwrapRead |> ConfigValue.bool
     printfn "  ConfigValue.bool:         %b" debug
 
     // ConfigValue.boolOption: extract bool (optional)
-    let newUiOpt = read (configDef FeatureNewUi) |> ConfigValue.boolOption
+    let newUiOpt = read (configDef FeatureNewUi) |> unwrapRead |> ConfigValue.boolOption
     printfn "  ConfigValue.boolOption:   %A" newUiOpt
 
     // ConfigValue.float: extract float (required)
-    let timeout = read (configDef RequestTimeout) |> ConfigValue.float
+    let timeout = read (configDef RequestTimeout) |> unwrapRead |> ConfigValue.float
     printfn "  ConfigValue.float:        %.1f" timeout
 
     // ConfigValue.floatOption: extract float (optional)
-    let timeoutOpt = read (configDef RequestTimeout) |> ConfigValue.floatOption
+    let timeoutOpt =
+        read (configDef RequestTimeout) |> unwrapRead |> ConfigValue.floatOption
+
     printfn "  ConfigValue.floatOption:  %A" timeoutOpt
 
     // ConfigValue.custom: parse custom type (required)
@@ -262,11 +280,17 @@ let demoConfigValueHelpers () =
         | "error" -> Some "ERROR"
         | _ -> None
 
-    let level = read (configDef LogLevel) |> ConfigValue.custom parseLogLevel
+    let level =
+        read (configDef LogLevel) |> unwrapRead |> ConfigValue.custom parseLogLevel
+
     printfn "  ConfigValue.custom:       %s" level
 
     // ConfigValue.customOption: parse custom type (optional)
-    let levelOpt = read (configDef LogLevel) |> ConfigValue.customOption parseLogLevel
+    let levelOpt =
+        read (configDef LogLevel)
+        |> unwrapRead
+        |> ConfigValue.customOption parseLogLevel
+
     printfn "  ConfigValue.customOption: %A" levelOpt
 
     printfn ""
@@ -426,8 +450,9 @@ let demoVerification () =
                 | Manual
                 | AutoGenerated _ ->
                     match read def with
-                    | Some _ -> VerifySuccess $"set (%A{def.ValueType})"
-                    | None -> VerifyFailed "not set"
+                    | Ok(Some _) -> VerifySuccess $"set (%A{def.ValueType})"
+                    | Ok None -> VerifyFailed "not set"
+                    | Error msg -> VerifyFailed msg
 
             (def.Name, result))
         |> Array.ofList
