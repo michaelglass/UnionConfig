@@ -87,13 +87,10 @@ module ConfigEditor =
             else
                 Failed errors
 
-    /// Edit config via editor workflow
-    /// Parameters:
-    /// - loadConfig: function to load all config
-    /// - setValue: function to set a single value
-    /// - writeConfigFile: function to write config to a file (path -> config -> unit)
-    /// - verifyChanges: function to verify changed values (returns verification results)
-    let editConfig
+    /// Internal: Edit config with injectable I/O operations for testability
+    let internal editConfigWith
+        (runEditor: string -> unit)
+        (getConfirmation: unit -> string)
         (loadConfig: unit -> Map<string, string>)
         (setValue: string -> string -> bool)
         (writeConfigFile: string -> Map<string, string> -> unit)
@@ -108,13 +105,7 @@ module ConfigEditor =
             printfn $"Wrote config to: %s{tempFile}"
             printfn ""
 
-            let editorEnv =
-                // fsharplint:disable-next-line Hints
-                Environment.GetEnvironmentVariable("EDITOR")
-                |> Option.ofObj
-                |> Option.defaultValue "vi"
-
-            openInEditor editorEnv tempFile
+            runEditor tempFile
 
             let afterConfig = readEnvFile tempFile
             let changes = compareConfigs config afterConfig
@@ -150,7 +141,7 @@ module ConfigEditor =
                 else
                     printfn ""
                     printf "Apply these changes? [y/N] "
-                    let response = Console.ReadLine()
+                    let response = getConfirmation ()
 
                     if response.ToLowerInvariant() = "y" then
                         printfn ""
@@ -172,7 +163,30 @@ module ConfigEditor =
                     else
                         printfn "Changes discarded."
         finally
-            try
-                File.Delete(tempFile)
-            with _ ->
-                ()
+            File.Delete(tempFile)
+
+    /// Edit config via editor workflow
+    /// Parameters:
+    /// - loadConfig: function to load all config
+    /// - setValue: function to set a single value
+    /// - writeConfigFile: function to write config to a file (path -> config -> unit)
+    /// - verifyChanges: function to verify changed values (returns verification results)
+    let editConfig
+        (loadConfig: unit -> Map<string, string>)
+        (setValue: string -> string -> bool)
+        (writeConfigFile: string -> Map<string, string> -> unit)
+        (verifyChanges: (string * string * string) array -> Map<string, string> -> (string * VerificationResult) array)
+        : unit =
+
+        let runEditor tempFile =
+            let editorEnv =
+                // fsharplint:disable-next-line Hints
+                Environment.GetEnvironmentVariable("EDITOR")
+                |> Option.ofObj
+                |> Option.defaultValue "vi"
+
+            openInEditor editorEnv tempFile
+
+        let getConfirmation () = Console.ReadLine()
+
+        editConfigWith runEditor getConfirmation loadConfig setValue writeConfigFile verifyChanges

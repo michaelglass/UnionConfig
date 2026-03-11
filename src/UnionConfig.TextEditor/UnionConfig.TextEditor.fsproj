@@ -19,6 +19,12 @@
     <NoWarn>$(NoWarn);NETSDK1188</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>UnionConfig.TextEditor.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <!-- Project references -->
   <ItemGroup>
     <ProjectReference Include="../UnionConfig/UnionConfig.fsproj" />
