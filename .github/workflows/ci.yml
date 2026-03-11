@@ -42,7 +42,9 @@ jobs:
         run: dotnet fsharplint lint UnionConfig.slnx
 
       - name: Test
-        run: dotnet exec tests/UnionConfig.Tests/bin/Debug/net10.0/UnionConfig.Tests.dll
+        run: |
+          dotnet exec tests/UnionConfig.Tests/bin/Debug/net10.0/UnionConfig.Tests.dll
+          dotnet exec tests/UnionConfig.Ssm.Tests/bin/Debug/net10.0/UnionConfig.Ssm.Tests.dll
 
   pack:
     runs-on: ubuntu-latest
@@ -64,6 +66,7 @@ jobs:
         run: |
           dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release -o ./artifacts
           dotnet pack src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj -c Release -o ./artifacts
+          dotnet pack src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj -c Release -o ./artifacts
 
       - name: Upload package
         uses: actions/upload-artifact@v4
