@@ -12,7 +12,10 @@ depends = ["restore"]
 
 [tasks.test]
 description = "Run tests"
-run = "dotnet exec tests/UnionConfig.Tests/bin/Debug/net10.0/UnionConfig.Tests.dll"
+run = """
+dotnet exec tests/UnionConfig.Tests/bin/Debug/net10.0/UnionConfig.Tests.dll
+dotnet exec tests/UnionConfig.Ssm.Tests/bin/Debug/net10.0/UnionConfig.Ssm.Tests.dll
+"""
 depends = ["build"]
 
 [tasks.format]
@@ -41,5 +44,6 @@ description = "Create NuGet packages"
 run = """
 dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release
 dotnet pack src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj -c Release
+dotnet pack src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj -c Release
 """
 depends = ["build"]
