@@ -33,7 +33,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Check formatting
-        run: dotnet fantomas src/ tests/ --check
+        run: dotnet fantomas src/ tests/ examples/ --check
 
       - name: Build
         run: dotnet build --no-restore
@@ -41,10 +41,33 @@ jobs:
       - name: Lint
         run: dotnet fsharplint lint UnionConfig.slnx
 
-      - name: Test
+      - name: Test with coverage
         run: |
-          dotnet exec tests/UnionConfig.Tests/bin/Debug/net10.0/UnionConfig.Tests.dll
-          dotnet exec tests/UnionConfig.Ssm.Tests/bin/Debug/net10.0/UnionConfig.Ssm.Tests.dll
+          rm -rf coverage
+          dotnet test --project tests/UnionConfig.Tests \
+            --coverage \
+            --coverage-output-format cobertura \
+            --coverage-output "$PWD/coverage/coverage.cobertura.xml"
+          dotnet test --project tests/UnionConfig.Ssm.Tests \
+            --coverage \
+            --coverage-output-format cobertura \
+            --coverage-output "$PWD/coverage/ssm-coverage.cobertura.xml"
+          dotnet test --project tests/UnionConfig.TextEditor.Tests \
+            --coverage \
+            --coverage-output-format cobertura \
+            --coverage-output "$PWD/coverage/texteditor-coverage.cobertura.xml"
+
+      - name: Check coverage
+        run: dotnet fsi scripts/check-coverage.fsx
+
+      - name: Check docs sync
+        run: dotnet fsi scripts/sync-docs.fsx --check
+
+      - name: Generate docs
+        run: dotnet fsdocs build --output output/docs --clean
+
+      - name: Build example app
+        run: dotnet build examples/ExampleApp --warnaserror
 
   pack:
     runs-on: ubuntu-latest
@@ -97,6 +120,7 @@ jobs:
         run: |
           dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release --no-build -o ./artifacts
           dotnet pack src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj -c Release --no-build -o ./artifacts
+          dotnet pack src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj -c Release --no-build -o ./artifacts
 
       - name: Get version from tag
         id: version
