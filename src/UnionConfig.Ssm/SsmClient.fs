@@ -7,104 +7,108 @@ open Amazon
 open Amazon.SimpleSystemsManagement
 open Amazon.SimpleSystemsManagement.Model
 
+#nowarn "3536"
+
 /// Configuration for the SSM client
 [<NoComparison; NoEquality>]
 type SsmClientConfig =
-    { /// AWS region for SSM operations
-      Region: RegionEndpoint
-      /// Called before each SSM operation (e.g., to ensure AWS SSO auth)
-      EnsureAuth: unit -> unit }
+    {
+        /// AWS region for SSM operations
+        Region: RegionEndpoint
+        /// Called before each SSM operation (e.g., to ensure AWS SSO auth)
+        EnsureAuth: unit -> unit
+        /// Optional client override for testing. When None, creates a real AWS client.
+        ClientOverride: IAmazonSimpleSystemsManagement option
+    }
 
-    /// Default config: us-east-1, no auth hook
+    /// Default config: us-east-1, no auth hook, no client override
     static member Default =
         { Region = RegionEndpoint.USEast1
-          EnsureAuth = ignore }
+          EnsureAuth = ignore
+          ClientOverride = None }
+
+/// Use the provided client or create a new one, then run the given function.
+/// If a ClientOverride is set, uses it (caller manages lifetime).
+/// Otherwise, creates and disposes a new client.
+let internal withClient (config: SsmClientConfig) (f: IAmazonSimpleSystemsManagement -> 'a) : 'a =
+    config.EnsureAuth()
+
+    match config.ClientOverride with
+    | Some client -> f client
+    | None ->
+        use client = new AmazonSimpleSystemsManagementClient(config.Region)
+        f client
 
 /// Get a single SSM parameter value (with decryption)
 let getParameter (config: SsmClientConfig) (path: string) : string option =
-    config.EnsureAuth()
+    withClient config (fun client ->
+        try
+            let request = GetParameterRequest(Name = path, WithDecryption = true)
+            let response = client.GetParameterAsync(request).Result
 
-    try
-        use client = new AmazonSimpleSystemsManagementClient(config.Region)
-        let request = GetParameterRequest(Name = path, WithDecryption = true)
-        let response = client.GetParameterAsync(request).Result
-
-        if not (String.IsNullOrWhiteSpace(response.Parameter.Value)) then
-            Some response.Parameter.Value
-        else
-            None
-    with
-    | :? AggregateException as ae when (ae.InnerException :? ParameterNotFoundException) -> None
-    | _ -> None
+            if not (String.IsNullOrWhiteSpace(response.Parameter.Value)) then
+                Some response.Parameter.Value
+            else
+                None
+        with
+        | :? AggregateException as ae when (ae.InnerException :? ParameterNotFoundException) -> None
+        | _ -> None)
 
 /// Get all SSM parameters under a path prefix (with pagination and decryption)
 let getParametersByPath (config: SsmClientConfig) (pathPrefix: string) : (string * string) list =
-    config.EnsureAuth()
+    withClient config (fun client ->
+        try
+            let rec getAllParameters (nextToken: string option) (acc: (string * string) list) =
+                let request =
+                    GetParametersByPathRequest(Path = pathPrefix, WithDecryption = true, Recursive = true)
 
-    try
-        use client = new AmazonSimpleSystemsManagementClient(config.Region)
+                match nextToken with
+                | Some token -> request.NextToken <- token
+                | None -> ()
 
-        let rec getAllParameters (nextToken: string option) (acc: (string * string) list) =
-            let request =
-                GetParametersByPathRequest(Path = pathPrefix, WithDecryption = true, Recursive = true)
+                let response = client.GetParametersByPathAsync(request).Result
 
-            match nextToken with
-            | Some token -> request.NextToken <- token
-            | None -> ()
+                let parameters =
+                    if isNull response.Parameters then
+                        []
+                    else
+                        response.Parameters |> Seq.map (fun p -> (p.Name, p.Value)) |> Seq.toList
 
-            let response = client.GetParametersByPathAsync(request).Result
+                let allParams = acc @ parameters
 
-            let parameters =
-                if isNull response.Parameters then
-                    []
+                if String.IsNullOrEmpty(response.NextToken) then
+                    allParams
                 else
-                    response.Parameters |> Seq.map (fun p -> (p.Name, p.Value)) |> Seq.toList
+                    getAllParameters (Some response.NextToken) allParams
 
-            let allParams = acc @ parameters
-
-            if String.IsNullOrEmpty(response.NextToken) then
-                allParams
-            else
-                getAllParameters (Some response.NextToken) allParams
-
-        getAllParameters None []
-    with _ ->
-        []
+            getAllParameters None []
+        with _ ->
+            [])
 
 /// Set an SSM parameter value (creates or updates)
-let setParameter
-    (config: SsmClientConfig)
-    (path: string)
-    (value: string)
-    (isSecure: bool)
-    : Result<unit, string> =
-    config.EnsureAuth()
+let setParameter (config: SsmClientConfig) (path: string) (value: string) (isSecure: bool) : Result<unit, string> =
+    withClient config (fun client ->
+        try
+            let paramType =
+                if isSecure then
+                    ParameterType.SecureString
+                else
+                    ParameterType.String
 
-    try
-        use client = new AmazonSimpleSystemsManagementClient(config.Region)
+            let request =
+                PutParameterRequest(Name = path, Value = value, Type = paramType, Overwrite = true)
 
-        let paramType =
-            if isSecure then
-                ParameterType.SecureString
-            else
-                ParameterType.String
-
-        let request =
-            PutParameterRequest(Name = path, Value = value, Type = paramType, Overwrite = true)
-
-        client.PutParameterAsync(request).Result |> ignore
-        Ok()
-    with ex ->
-        Error ex.Message
+            client.PutParameterAsync(request).Result |> ignore
+            Ok()
+        with ex ->
+            Error ex.Message)
 
 /// Delete an SSM parameter
 let deleteParameter (config: SsmClientConfig) (path: string) : Result<unit, string> =
-    config.EnsureAuth()
-
-    try
-        use client = new AmazonSimpleSystemsManagementClient(config.Region)
-        let request = DeleteParameterRequest(Name = path)
-        client.DeleteParameterAsync(request).Result |> ignore
-        Ok()
-    with ex ->
-        Error ex.Message
+    withClient config (fun client ->
+        try
+            let request = DeleteParameterRequest(Name = path)
+            client.DeleteParameterAsync(request).Result |> ignore
+            Ok()
+        with ex ->
+            Error ex.Message)
