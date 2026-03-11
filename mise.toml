@@ -1,0 +1,45 @@
+[tools]
+dotnet = "10.0"
+
+[tasks.restore]
+description = "Restore dependencies"
+run = "dotnet restore"
+
+[tasks.build]
+description = "Build the solution"
+run = "dotnet build"
+depends = ["restore"]
+
+[tasks.test]
+description = "Run tests"
+run = "dotnet exec tests/UnionConfig.Tests/bin/Debug/net10.0/UnionConfig.Tests.dll"
+depends = ["build"]
+
+[tasks.format]
+description = "Format code with Fantomas"
+run = "dotnet fantomas src/ tests/"
+
+[tasks.format-check]
+description = "Check formatting without making changes"
+run = "dotnet fantomas src/ tests/ --check"
+
+[tasks.lint]
+description = "Run FSharpLint"
+run = "dotnet fsharplint lint UnionConfig.slnx"
+depends = ["build"]
+
+[tasks.check]
+description = "Run all checks with auto-fix"
+depends = ["format", "lint", "test"]
+
+[tasks.ci]
+description = "Run all CI checks (no auto-fix)"
+depends = ["format-check", "lint", "test"]
+
+[tasks.pack]
+description = "Create NuGet packages"
+run = """
+dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release
+dotnet pack src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj -c Release
+"""
+depends = ["build"]

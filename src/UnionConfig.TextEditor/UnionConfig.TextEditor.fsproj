@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Package metadata -->
+    <PackageId>UnionConfig.TextEditor</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Michael Glass</Authors>
+    <Description>Interactive text editor workflows for UnionConfig configuration management</Description>
+    <PackageTags>fsharp;configuration;editor;cli</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/michaelglass/union-config</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>5</WarningLevel>
+    <NoWarn>$(NoWarn);NETSDK1188</NoWarn>
+  </PropertyGroup>
+
+  <!-- Project references -->
+  <ItemGroup>
+    <ProjectReference Include="../UnionConfig/UnionConfig.fsproj" />
+    <PackageReference Include="CommandTree" Version="0.1.0" />
+  </ItemGroup>
+
+  <!-- F# source files - ORDER MATTERS -->
+  <ItemGroup>
+    <Compile Include="ConfigEditor.fs" />
+  </ItemGroup>
+</Project>
