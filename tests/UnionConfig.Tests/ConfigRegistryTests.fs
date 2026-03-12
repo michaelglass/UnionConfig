@@ -24,6 +24,10 @@ type NestedConfig =
     | Database of DatabaseVars
     | Email of EmailVars
 
+type UnsupportedConfig =
+    | ValidCase
+    | BadCase of string
+
 let private simpleToDef (v: SimpleConfig) : ConfigVarDef =
     let name =
         match v with
@@ -61,6 +65,18 @@ let private nestedToDef (v: NestedConfig) : ConfigVarDef =
           HowToFind = "env"
           ManagementUrl = None } }
 
+let private dummyToDef (_: UnsupportedConfig) : ConfigVarDef =
+    { Name = "DUMMY"
+      Kind = Manual
+      ValueType = StringType
+      Requirement = Required
+      IsSecret = false
+
+      Doc =
+        { Description = "dummy"
+          HowToFind = "env"
+          ManagementUrl = None } }
+
 module AllDefsTests =
     [<Fact>]
     let ``allDefs discovers all cases of flat DU`` () =
@@ -83,6 +99,9 @@ module AllDefsTests =
         test <@ apiKeyDef.IsSecret = true @>
         test <@ apiKeyDef.Requirement = Required @>
         test <@ apiKeyDef.Kind = Manual @>
+
+    [<Fact>]
+    let ``allDefs throws for DU cases with unsupported payload`` () = raises<exn> <@ allDefs dummyToDef @>
 
 module AllDefsGroupedTests =
     [<Fact>]
