@@ -125,7 +125,7 @@ jobs:
         id: nuget-login
         uses: nuget/login@v1
         with:
-          user: ${{ vars.NUGET_USERNAME }}
+          user: ${{ vars.NUGET_USER }}
 
       - name: Publish to NuGet
         run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
