@@ -350,11 +350,11 @@ module MissingEntriesHeaderTests =
     let ``missingEntriesHeader returns empty list when all required values present`` () =
         let defs = [| mkDef "DB_HOST" Manual Required "The database host" |]
         let values = Map.ofList [ "DB_HOST", "localhost" ]
-        test <@ missingEntriesHeader defs values = [] @>
+        test <@ missingEntriesHeader defs values |> List.isEmpty @>
 
     [<Fact>]
     let ``missingEntriesHeader returns empty list when no defs`` () =
-        test <@ missingEntriesHeader [||] Map.empty = [] @>
+        test <@ missingEntriesHeader [||] Map.empty |> List.isEmpty @>
 
     [<Fact>]
     let ``missingEntriesHeader lists required entries with empty values`` () =
