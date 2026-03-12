@@ -2,18 +2,15 @@ namespace UnionConfig.TextEditor
 
 open System
 open System.IO
-open CommandTree
 open UnionConfig.Verification
 open UnionConfig.EnvFile
 
 /// Shared config editing operations parameterized by backend
 module ConfigEditor =
-    // Aliases for UI functions
-    let private logInfo = UI.info
-    let private logPass = UI.pass
-    let private logFail = UI.fail
-    let private section = UI.section
-    let private withSpinner = UI.withSpinner
+    let private logInfo (msg: string) = printfn "  %s" msg
+    let private logPass (msg: string) = printfn "  ✓ %s" msg
+    let private logFail (msg: string) = printfn "  ✗ %s" msg
+    let private section (title: string) = printfn "── %s ──" title
 
     /// Result of populating defaults
     type PopulateResult =
@@ -147,11 +144,10 @@ module ConfigEditor =
                         printfn ""
 
                         let results =
-                            withSpinner $"Applying %d{changes.Length} changes" (fun () ->
-                                changes
-                                |> Array.map (fun (key, _, newValue) ->
-                                    let success = setValue key newValue
-                                    (key, success)))
+                            changes
+                            |> Array.map (fun (key, _, newValue) ->
+                                let success = setValue key newValue
+                                (key, success))
 
                         printfn ""
 

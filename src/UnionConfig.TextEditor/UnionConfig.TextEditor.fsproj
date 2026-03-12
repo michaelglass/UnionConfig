@@ -29,7 +29,6 @@
   <!-- Project references -->
   <ItemGroup>
     <ProjectReference Include="../UnionConfig/UnionConfig.fsproj" />
-    <PackageReference Include="CommandTree" Version="0.1.0" />
   </ItemGroup>
 
   <!-- F# source files - ORDER MATTERS -->
