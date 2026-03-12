@@ -4,6 +4,27 @@ module UnionConfig.EnvFile
 open System
 open System.Diagnostics
 open System.IO
+open UnionConfig.Types
+
+/// A single entry in a .env file section
+type EnvFileEntry =
+    {
+        /// The environment variable name
+        Name: string
+        /// The environment variable value
+        Value: string
+        /// Optional comment to display above the entry
+        Comment: string option
+    }
+
+/// A section of entries in a .env file, grouped under a header
+type EnvFileSection =
+    {
+        /// The section header text
+        Header: string
+        /// The entries in this section
+        Entries: EnvFileEntry array
+    }
 
 /// Secret key indicators for masking sensitive values in output
 let secretKeyIndicators =
@@ -105,3 +126,55 @@ let displayChanges (changes: (string * string * string) array) =
                 maskValue key newValue
 
         printfn $"  %s{key}: %s{oldDisplay} -> %s{newDisplay}"
+
+/// Write a sectioned .env file with headers and optional comments
+/// Each section gets a `# === Header ===` header line, and entries may have a comment line above them
+let writeEnvFile (path: string) (sections: EnvFileSection array) : unit =
+    use writer = new StreamWriter(path)
+    let mutable firstSection = true
+
+    for section in sections do
+        if not firstSection then
+            writer.WriteLine()
+
+        firstSection <- false
+        writer.WriteLine($"# === %s{section.Header} ===")
+
+        for entry in section.Entries do
+            match entry.Comment with
+            | Some comment when not (String.IsNullOrWhiteSpace(comment)) -> writer.WriteLine($"# %s{comment}")
+            | _ -> ()
+
+            writer.WriteLine($"%s{entry.Name}=%s{entry.Value}")
+
+/// Build EnvFileSection array from grouped config var definitions and current values
+/// Groups with empty name become "Other". Uses Doc.Description as comment if non-empty.
+/// Missing values default to empty string.
+let defaultSections
+    (groupedDefs: (string * ConfigVarDef array) array)
+    (values: Map<string, string>)
+    : EnvFileSection array =
+    groupedDefs
+    |> Array.map (fun (groupName, defs) ->
+        let header =
+            if String.IsNullOrEmpty(groupName) then
+                "Other"
+            else
+                groupName
+
+        let entries =
+            defs
+            |> Array.map (fun def ->
+                let value = values |> Map.tryFind def.Name |> Option.defaultValue ""
+
+                let comment =
+                    if String.IsNullOrWhiteSpace(def.Doc.Description) then
+                        None
+                    else
+                        Some def.Doc.Description
+
+                { Name = def.Name
+                  Value = value
+                  Comment = comment })
+
+        { Header = header; Entries = entries })
