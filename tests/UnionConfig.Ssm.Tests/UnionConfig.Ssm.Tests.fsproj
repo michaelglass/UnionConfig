@@ -9,8 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="HttpFixtures.fs" />
-    <Compile Include="InMemorySsmClient.fs" />
     <Compile Include="SsmConfigStoreTests.fs" />
   </ItemGroup>
 
@@ -23,8 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="4.0.7.1" />
-    <PackageReference Include="Unquote" Version="7.0.1" />
+<PackageReference Include="Unquote" Version="7.0.1" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.5.2" />
