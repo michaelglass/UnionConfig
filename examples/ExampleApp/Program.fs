@@ -8,9 +8,8 @@ open UnionConfig.Types
 open UnionConfig.Reader
 open UnionConfig.EnvFile
 open UnionConfig.Verification
-open UnionConfig.Ssm.SsmClient
-open UnionConfig.Ssm.SsmConfigStore
-open UnionConfig.TextEditor.ConfigEditor
+open UnionConfig.SsmConfigStore
+open UnionConfig.ConfigEditor
 
 // =============================================================================
 // 1. Define config variables as a discriminated union
@@ -539,72 +538,30 @@ let demoOpenInEditor () =
     printfn ""
 
 // =============================================================================
-// 11. Demonstrate SSM Client (requires AWS credentials)
-// =============================================================================
-
-let demoSsmClient () =
-    printfn "== SSM Client =="
-    printfn ""
-
-    // SsmClientConfig: configure region and auth hook
-    let config =
-        { SsmClientConfig.Default with
-            EnsureAuth = fun () -> printfn "  (auth hook called)" }
-
-    printfn "  SsmClientConfig.Default.Region: %s" (SsmClientConfig.Default.Region.SystemName)
-    printfn "  Custom config region:           %s" (config.Region.SystemName)
-    printfn ""
-
-    // The SSM functions require live AWS credentials.
-    // We attempt each one and log gracefully if AWS is unavailable.
-    printfn "  Attempting SSM operations (requires AWS credentials)..."
-    printfn ""
-
-    let printSsmResult label result =
-        match result with
-        | Ok() -> printfn "  %s ok" label
-        | Error(msg: string) ->
-            let short =
-                if msg.Contains("AWS credentials") then
-                    "no AWS credentials"
-                else
-                    msg.Substring(0, min 60 msg.Length)
-
-            printfn "  %s skipped (%s)" label short
-
-    // getParameter: fetch a single parameter
-    try
-        let result = getParameter config "/unionconfig-demo/test"
-        printfn "  getParameter:        %A" result
-    with ex ->
-        printfn "  getParameter:        skipped (%s)" (ex.GetType().Name)
-
-    // setParameter: create or update a parameter
-    let setResult = setParameter config "/unionconfig-demo/test" "hello" false
-    printSsmResult "setParameter:       " setResult
-
-    // getParametersByPath: list parameters under a prefix
-    try
-        let result = getParametersByPath config "/unionconfig-demo/"
-        printfn "  getParametersByPath: %d params found" result.Length
-    with ex ->
-        printfn "  getParametersByPath: skipped (%s)" (ex.GetType().Name)
-
-    // deleteParameter: remove a parameter
-    let deleteResult = deleteParameter config "/unionconfig-demo/test"
-    printSsmResult "deleteParameter:    " deleteResult
-
-    printfn ""
-
-// =============================================================================
-// 12. Demonstrate SSM Config Store (requires AWS credentials)
+// 11. Demonstrate SSM Config Store (with in-memory operations)
 // =============================================================================
 
 let demoSsmConfigStore () =
     printfn "== SSM Config Store =="
     printfn ""
 
-    // SsmPathMapping: map config var names to SSM parameter paths
+    // In production, you'd create SsmOperations backed by AWS SDK, HTTP, etc.
+    // Here we use an in-memory stub to demonstrate the API.
+    let mutable paramStore = Map.empty<string, string>
+
+    let operations: SsmOperations =
+        { GetParameter = fun path -> Map.tryFind path paramStore
+          SetParameter =
+            fun path value _isSecure ->
+                paramStore <- Map.add path value paramStore
+                Ok()
+          DeleteParameter =
+            fun path ->
+                paramStore <- Map.remove path paramStore
+                Ok()
+          GetParametersByPath = fun prefix -> paramStore |> Map.filter (fun k _ -> k.StartsWith(prefix)) |> Map.toList }
+
+    // SsmPathMapping: map config var names to parameter paths
     let pathMapping: SsmPathMapping =
         { ToPath = fun name -> $"/myapp/staging/%s{name}"
           FromPath = fun path -> path.Replace("/myapp/staging/", "")
@@ -618,56 +575,41 @@ let demoSsmConfigStore () =
 
     printfn ""
 
-    // SsmConfigStore: ties together client config, path mapping, and secret detection
+    // SsmConfigStore: ties together operations, path mapping, and secret detection
     let store: SsmConfigStore =
-        { Config = SsmClientConfig.Default
+        { Operations = operations
           PathMapping = pathMapping
           IsSecret = fun name -> (configDef ApiKey).IsSecret && name = "API_KEY" }
 
     let varNames = allDefs |> List.map (fun d -> d.Name) |> Array.ofList
 
-    printfn "  Attempting SSM store operations (requires AWS credentials)..."
-    printfn ""
-
     // getValue: get a single config value
-    try
-        let result = getValue store "DATABASE_URL"
-        printfn "  getValue:     %A" result
-    with ex ->
-        printfn "  getValue:     skipped (%s)" (ex.GetType().Name)
+    let result = getValue store "DATABASE_URL"
+    printfn "  getValue (before set): %A" result
 
     // setValue: set a config value (auto-detects SecureString)
-    try
-        let result = setValue store "MAX_RETRIES" "5"
-        printfn "  setValue:     %b" result
-    with ex ->
-        printfn "  setValue:     skipped (%s)" (ex.GetType().Name)
+    let setResult = setValue store "DATABASE_URL" "postgresql://localhost/myapp"
+    printfn "  setValue:              %b" setResult
+
+    let result2 = getValue store "DATABASE_URL"
+    printfn "  getValue (after set):  %A" result2
 
     // deleteValue: delete a config value
-    try
-        let result = deleteValue store "MAX_RETRIES"
-        printfn "  deleteValue:  %b" result
-    with ex ->
-        printfn "  deleteValue:  skipped (%s)" (ex.GetType().Name)
+    let delResult = deleteValue store "DATABASE_URL"
+    printfn "  deleteValue:           %b" delResult
 
     // loadAll: load all config values for given var names
-    try
-        let result = loadAll store varNames
-        printfn "  loadAll:      %d entries" result.Count
-    with ex ->
-        printfn "  loadAll:      skipped (%s)" (ex.GetType().Name)
+    let loaded = loadAll store varNames
+    printfn "  loadAll:               %d entries" loaded.Count
 
     // applyChanges: apply a set of changes (sets and deletes)
-    try
-        let changes = [| ("MAX_RETRIES", "3", "5"); ("LOG_LEVEL", "info", "") |]
-        let results = applyChanges store changes
-        printfn "  applyChanges: %d results" results.Length
+    let changes = [| ("MAX_RETRIES", "", "5"); ("LOG_LEVEL", "", "info") |]
+    let results = applyChanges store changes
+    printfn "  applyChanges:          %d results" results.Length
 
-        for (key, success, wasDelete) in results do
-            let op = if wasDelete then "delete" else "set"
-            printfn "    %s (%s): %b" key op success
-    with ex ->
-        printfn "  applyChanges: skipped (%s)" (ex.GetType().Name)
+    for (key, success, wasDelete) in results do
+        let op = if wasDelete then "delete" else "set"
+        printfn "    %s (%s): %b" key op success
 
     printfn ""
 
@@ -974,7 +916,6 @@ let main _argv =
     demoVerification ()
     demoDocs ()
     demoOpenInEditor ()
-    demoSsmClient ()
     demoSsmConfigStore ()
     demoConfigEditor ()
     demoConfigRegistryFlat ()

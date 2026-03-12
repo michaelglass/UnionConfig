@@ -7,8 +7,8 @@
     <PackageId>UnionConfig</PackageId>
     <Version>0.1.0</Version>
     <Authors>Michael Glass</Authors>
-    <Description>Type-safe configuration management using F# discriminated unions</Description>
-    <PackageTags>fsharp;configuration;discriminated-union;env;dotenv</PackageTags>
+    <Description>Type-safe configuration management using F# discriminated unions. Includes env reader, .env file operations, SSM parameter store backend, verification, and interactive text editor workflow.</Description>
+    <PackageTags>fsharp;configuration;discriminated-union;env;dotenv;ssm;parameter-store;editor</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/michaelglass/union-config</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -34,5 +34,7 @@
     <Compile Include="Reader.fs" />
     <Compile Include="EnvFile.fs" />
     <Compile Include="ConfigRegistry.fs" />
+    <Compile Include="SsmConfigStore.fs" />
+    <Compile Include="ConfigEditor.fs" />
   </ItemGroup>
 </Project>

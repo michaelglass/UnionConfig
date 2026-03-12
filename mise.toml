@@ -22,14 +22,6 @@ dotnet test --project tests/UnionConfig.Tests \
   --coverage \
   --coverage-output-format cobertura \
   --coverage-output "$PWD/coverage/coverage.cobertura.xml"
-dotnet test --project tests/UnionConfig.Ssm.Tests \
-  --coverage \
-  --coverage-output-format cobertura \
-  --coverage-output "$PWD/coverage/ssm-coverage.cobertura.xml"
-dotnet test --project tests/UnionConfig.TextEditor.Tests \
-  --coverage \
-  --coverage-output-format cobertura \
-  --coverage-output "$PWD/coverage/texteditor-coverage.cobertura.xml"
 """
 depends = ["build"]
 
@@ -86,11 +78,7 @@ depends = ["format-check", "lint", "coverage-check", "sync-docs-check", "docs", 
 
 [tasks.pack]
 description = "Create NuGet packages"
-run = """
-dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release
-dotnet pack src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj -c Release
-dotnet pack src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj -c Release
-"""
+run = "dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release"
 depends = ["build"]
 
 [tasks.docs]

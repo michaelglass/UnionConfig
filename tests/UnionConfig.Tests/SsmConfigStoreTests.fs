@@ -1,9 +1,9 @@
-module UnionConfig.Ssm.Tests.SsmConfigStoreTests
+module UnionConfig.Tests.SsmConfigStoreTests
 
 open System
 open Xunit
 open Swensen.Unquote
-open UnionConfig.Ssm.SsmConfigStore
+open UnionConfig.SsmConfigStore
 
 /// Mutable in-memory parameter store for testing
 type InMemoryStore() =

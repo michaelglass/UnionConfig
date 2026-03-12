@@ -1,13 +1,9 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj" />
-    <Project Path="src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj" />
     <Project Path="src/UnionConfig/UnionConfig.fsproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/UnionConfig.Ssm.Tests/UnionConfig.Ssm.Tests.fsproj" />
     <Project Path="tests/UnionConfig.Tests/UnionConfig.Tests.fsproj" />
-    <Project Path="tests/UnionConfig.TextEditor.Tests/UnionConfig.TextEditor.Tests.fsproj" />
   </Folder>
   <Folder Name="/examples/">
     <Project Path="examples/ExampleApp/ExampleApp.fsproj" />

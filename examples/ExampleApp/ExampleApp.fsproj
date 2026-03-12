@@ -13,7 +13,5 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/UnionConfig/UnionConfig.fsproj" />
-    <ProjectReference Include="../../src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj" />
-    <ProjectReference Include="../../src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj" />
   </ItemGroup>
 </Project>

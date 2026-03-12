@@ -1,6 +1,6 @@
 /// Generic config store backed by a parameter store.
 /// Maps config var names to parameter paths and provides CRUD operations.
-module UnionConfig.Ssm.SsmConfigStore
+module UnionConfig.SsmConfigStore
 
 open System
 
@@ -51,14 +51,13 @@ let getValue (store: SsmConfigStore) (name: string) : string option =
 let setValue (store: SsmConfigStore) (name: string) (value: string) : bool =
     let isSecure = store.IsSecret name
 
-    match store.Operations.SetParameter(store.PathMapping.ToPath name) value isSecure with
+    match store.Operations.SetParameter (store.PathMapping.ToPath name) value isSecure with
     | Ok() -> true
     | Error _ -> false
 
 /// Delete a config value. Returns true on success, false on error.
 let deleteValue (store: SsmConfigStore) (name: string) : bool =
-    store.Operations.DeleteParameter(store.PathMapping.ToPath name)
-    |> Result.isOk
+    store.Operations.DeleteParameter(store.PathMapping.ToPath name) |> Result.isOk
 
 /// Load all config values for the given var names.
 /// Returns a Map with all names as keys (empty string for missing values).

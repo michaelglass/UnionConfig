@@ -1,4 +1,4 @@
-namespace UnionConfig.TextEditor
+namespace UnionConfig
 
 open System
 open System.IO
