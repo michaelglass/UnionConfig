@@ -831,8 +831,12 @@ let demoWriteEnvFile () =
     // Uses group names as section headers and Doc.Description as comments
     let sections = defaultSections grouped currentValues
 
+    // missingEntriesHeader: generate a "MISSING CONFIG" banner for required entries without values
+    let allDefs = UnionConfig.ConfigRegistry.allDefs groupedConfigDef
+    let headerLines = missingEntriesHeader allDefs currentValues
+
     let envPath = Path.Combine(Path.GetTempPath(), "unionconfig-sectioned.env")
-    writeEnvFile envPath sections
+    writeEnvFile envPath headerLines sections
 
     printfn "  Wrote sectioned .env file to %s" envPath
     printfn "  Contents:"
