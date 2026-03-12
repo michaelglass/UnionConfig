@@ -12,7 +12,6 @@ let private makeDef name requirement valueType =
       ValueType = valueType
       Requirement = requirement
       IsSecret = false
-      Group = None
       Doc =
         { Description = "test"
           HowToFind = "test"

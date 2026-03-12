@@ -39,7 +39,7 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "PostgreSQL connection string"
               HowToFind = "Check your database provider dashboard"
@@ -50,7 +50,7 @@ let configDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "Database port number"
               HowToFind = "Usually 5432 for PostgreSQL"
@@ -61,7 +61,7 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = true
-          Group = None
+
           Doc =
             { Description = "External API key for third-party service"
               HowToFind = "Generate at https://dashboard.example.com/keys"
@@ -72,7 +72,7 @@ let configDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "Maximum retry attempts for failed requests"
               HowToFind = "Set to desired retry count (default: 3)"
@@ -83,7 +83,7 @@ let configDef =
           ValueType = BoolType
           Requirement = Optional
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "Enable debug logging"
               HowToFind = "Set to true or 1 to enable"
@@ -104,7 +104,7 @@ let configDef =
             )
           Requirement = Optional
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "Application log level"
               HowToFind = "One of: debug, info, warn, error"
@@ -115,7 +115,7 @@ let configDef =
           ValueType = BoolType
           Requirement = Optional
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "Feature flag: enable new UI"
               HowToFind = "Set to true to enable the redesigned UI"
@@ -126,7 +126,7 @@ let configDef =
           ValueType = FloatType
           Requirement = Optional
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "HTTP request timeout in seconds"
               HowToFind = "Set to desired timeout (default: 30.0)"
@@ -137,7 +137,7 @@ let configDef =
           ValueType = StringType
           Requirement = Optional
           IsSecret = false
-          Group = None
+
           Doc =
             { Description = "Redis cache hostname set by infrastructure"
               HowToFind = "Automatically provisioned by CloudFormation"
@@ -148,7 +148,7 @@ let configDef =
           ValueType = StringType
           Requirement = Optional
           IsSecret = true
-          Group = None
+
           Doc =
             { Description = "Webhook signing secret"
               HowToFind = "Auto-provisioned during service setup"

@@ -291,7 +291,6 @@ module DefaultSectionsTests =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          Group = None
           Doc =
             { Description = description
               HowToFind = ""
