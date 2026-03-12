@@ -17,7 +17,7 @@ depends = ["restore"]
 [tasks.test]
 description = "Run tests with coverage"
 run = """
-dotnet test \
+dotnet test --project tests/UnionConfig.Tests \
   --coverage \
   --coverage-output-format cobertura \
   --coverage-output "$PWD/coverage/coverage.cobertura.xml"

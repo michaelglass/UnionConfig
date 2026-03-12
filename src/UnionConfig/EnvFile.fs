@@ -209,5 +209,7 @@ let missingEntriesHeader (defs: ConfigVarDef array) (values: Map<string, string>
           "# MISSING CONFIG — fill these in first"
           "# ════════════════════════════════════════════════════════════════"
           "#"
-          yield! missing |> List.map (fun d -> $"# [%s{formatKindTag d.Kind}] %s{d.Name} — %s{d.Doc.Description}")
+          yield!
+              missing
+              |> List.map (fun d -> $"# [%s{formatKindTag d.Kind}] %s{d.Name} — %s{d.Doc.Description}")
           "" ]
