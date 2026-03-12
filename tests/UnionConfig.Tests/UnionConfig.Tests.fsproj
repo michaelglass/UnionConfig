@@ -14,6 +14,7 @@
     <Compile Include="ReaderTests.fs" />
     <Compile Include="EnvFileTests.fs" />
     <Compile Include="VerificationTests.fs" />
+    <Compile Include="ConfigRegistryTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

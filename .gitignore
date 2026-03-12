@@ -7,3 +7,5 @@ output/
 *.snupkg
 .vs/
 *.user
+.claude/settings.local.json
+docs/plans/

@@ -29,15 +29,18 @@ let overrides: Map<string, float * float> =
     Map.ofList
         [ // ConfigEditor.fs: Compiler-generated null checks on Array.map/choose lambda closures,
           // plus closure classes for runEditor, failures filter, and results map lambdas
-          "ConfigEditor.fs", (100.0, 75.0)
+          "ConfigEditor.fs", (100.0, 77.0)
           // EnvFile.fs: Compiler-generated branches in Array.exists lambda (null check),
           // String.Join/Substring chain (5/10 branches), and Process.Start null check
-          "EnvFile.fs", (100.0, 76.0)
+          "EnvFile.fs", (100.0, 80.0)
           // SsmClient.fs: Compiler-generated null check on new AmazonSimpleSystemsManagementClient
           "SsmClient.fs", (100.0, 91.0)
           // SsmConfigStore.fs: Compiler-generated null checks on Array.map lambdas
           // in loadAll and applyChanges
-          "SsmConfigStore.fs", (100.0, 85.0) ]
+          "SsmConfigStore.fs", (100.0, 85.0)
+          // ConfigRegistry.fs: Compiler-generated branches from FSharpValue.MakeUnion casts,
+          // FSharpType.IsUnion checks, and Array.groupBy/map lambda closures
+          "ConfigRegistry.fs", (100.0, 78.0) ]
 
 // ============================================================================
 // Types
