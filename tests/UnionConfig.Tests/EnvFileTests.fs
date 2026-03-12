@@ -225,7 +225,7 @@ module WriteEnvFileTests =
         let path = Path.GetTempFileName()
 
         try
-            writeEnvFile path [||]
+            writeEnvFile path [] [||]
             let content = File.ReadAllText(path)
             test <@ content = "" @>
         finally
@@ -246,7 +246,7 @@ module WriteEnvFileTests =
                             Value = "5432"
                             Comment = None } |] } |]
 
-            writeEnvFile path sections
+            writeEnvFile path [] sections
             let lines = File.ReadAllLines(path)
             test <@ lines.[0] = "# === Database ===" @>
             test <@ lines.[1] = "# The database host" @>
@@ -273,7 +273,7 @@ module WriteEnvFileTests =
                             Value = "abc"
                             Comment = None } |] } |]
 
-            writeEnvFile path sections
+            writeEnvFile path [] sections
             let lines = File.ReadAllLines(path)
             test <@ lines.[0] = "# === Database ===" @>
             test <@ lines.[1] = "DB_HOST=localhost" @>
@@ -283,6 +283,132 @@ module WriteEnvFileTests =
             test <@ lines.Length = 5 @>
         finally
             File.Delete(path)
+
+    [<Fact>]
+    let ``writeEnvFile prepends header lines before sections`` () =
+        let path = Path.GetTempFileName()
+
+        try
+            let headerLines =
+                [ "# ════════════════════════════════════════════════════════════════"
+                  "# MISSING CONFIG — fill these in first"
+                  "# ════════════════════════════════════════════════════════════════"
+                  "#"
+                  "# [Manual] DB_HOST — The database host"
+                  "" ]
+
+            let sections =
+                [| { Header = "Database"
+                     Entries =
+                       [| { Name = "DB_HOST"
+                            Value = ""
+                            Comment = Some "The database host" } |] } |]
+
+            writeEnvFile path headerLines sections
+            let lines = File.ReadAllLines(path)
+            test <@ lines.[0] = "# ════════════════════════════════════════════════════════════════" @>
+            test <@ lines.[1] = "# MISSING CONFIG — fill these in first" @>
+            test <@ lines.[4] = "# [Manual] DB_HOST — The database host" @>
+            test <@ lines.[5] = "" @>
+            test <@ lines.[6] = "# === Database ===" @>
+        finally
+            File.Delete(path)
+
+    [<Fact>]
+    let ``writeEnvFile with empty header lines behaves like before`` () =
+        let path = Path.GetTempFileName()
+
+        try
+            let sections =
+                [| { Header = "App"
+                     Entries =
+                       [| { Name = "PORT"
+                            Value = "3000"
+                            Comment = None } |] } |]
+
+            writeEnvFile path [] sections
+            let lines = File.ReadAllLines(path)
+            test <@ lines.[0] = "# === App ===" @>
+            test <@ lines.[1] = "PORT=3000" @>
+            test <@ lines.Length = 2 @>
+        finally
+            File.Delete(path)
+
+module MissingEntriesHeaderTests =
+    let mkDef name kind requirement description =
+        { Name = name
+          Kind = kind
+          ValueType = StringType
+          Requirement = requirement
+          IsSecret = false
+          Doc =
+            { Description = description
+              HowToFind = ""
+              ManagementUrl = None } }
+
+    [<Fact>]
+    let ``missingEntriesHeader returns empty list when all required values present`` () =
+        let defs = [| mkDef "DB_HOST" Manual Required "The database host" |]
+        let values = Map.ofList [ "DB_HOST", "localhost" ]
+        test <@ missingEntriesHeader defs values = [] @>
+
+    [<Fact>]
+    let ``missingEntriesHeader returns empty list when no defs`` () =
+        test <@ missingEntriesHeader [||] Map.empty = [] @>
+
+    [<Fact>]
+    let ``missingEntriesHeader lists required entries with empty values`` () =
+        let defs = [| mkDef "DB_HOST" Manual Required "The database host" |]
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("DB_HOST")) @>
+        test <@ header |> List.exists (fun l -> l.Contains("MISSING CONFIG")) @>
+
+    [<Fact>]
+    let ``missingEntriesHeader includes kind tag`` () =
+        let defs = [| mkDef "API_KEY" Manual Required "API key for service" |]
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("[Manual]")) @>
+
+    [<Fact>]
+    let ``missingEntriesHeader includes description`` () =
+        let defs = [| mkDef "API_KEY" Manual Required "API key for service" |]
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("API key for service")) @>
+
+    [<Fact>]
+    let ``missingEntriesHeader skips optional entries`` () =
+        let defs =
+            [| mkDef "REQUIRED_VAR" Manual Required "Must have"
+               mkDef "OPTIONAL_VAR" Manual Optional "Nice to have" |]
+
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("REQUIRED_VAR")) @>
+        test <@ not (header |> List.exists (fun l -> l.Contains("OPTIONAL_VAR"))) @>
+
+    [<Fact>]
+    let ``missingEntriesHeader skips entries with empty string value`` () =
+        let defs = [| mkDef "DB_HOST" Manual Required "The database host" |]
+        let values = Map.ofList [ "DB_HOST", "" ]
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("DB_HOST")) @>
+
+    [<Fact>]
+    let ``missingEntriesHeader shows Infrastructure kind`` () =
+        let defs = [| mkDef "VPC_ID" Infrastructure Required "VPC identifier" |]
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("[Infrastructure]")) @>
+
+    [<Fact>]
+    let ``missingEntriesHeader ends with empty line`` () =
+        let defs = [| mkDef "DB_HOST" Manual Required "Host" |]
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ List.last header = "" @>
 
 module DefaultSectionsTests =
     let mkDef name description =

@@ -157,8 +157,29 @@ displayChanges changes
 let display = maskValue "API_KEY" "sk-1234"  // "sk-1***"
 
 // Write sectioned .env file from grouped defs
-let sections = defaultSections (allDefsGrouped<AppConfig> configDef) currentValues
-writeEnvFile ".env" sections
+let grouped = allDefsGrouped<AppConfig> configDef
+let sections = defaultSections grouped currentValues
+
+// Generate a "MISSING CONFIG" banner for required entries without values
+let allDefs = allDefs<AppConfig> configDef
+let headerLines = missingEntriesHeader allDefs currentValues
+
+writeEnvFile ".env" headerLines sections
+```
+
+The generated `.env` file includes a header highlighting missing required entries:
+
+```env
+# ════════════════════════════════════════════════════════════════
+# MISSING CONFIG — fill these in first
+# ════════════════════════════════════════════════════════════════
+#
+# [Manual] API_KEY — External API key
+
+# === Database ===
+# PostgreSQL connection string
+DATABASE_URL=
+...
 ```
 <!-- sync:envfile:end -->
 
@@ -276,12 +297,13 @@ ConfigRegistry.byName             : ConfigVarDef array -> Map<string, ConfigVarD
 ConfigRegistry.names              : ConfigVarDef array -> string array
 
 // EnvFile
-EnvFile.readEnvFile      : string -> Map<string, string>
-EnvFile.writeEnvFile     : string -> EnvFileSection array -> unit
-EnvFile.defaultSections  : (string * ConfigVarDef array) array -> Map<string, string> -> EnvFileSection array
-EnvFile.compareConfigs   : Map<string, string> -> Map<string, string> -> (string * string * string) array
-EnvFile.maskValue        : string -> string -> string
-EnvFile.displayChanges   : (string * string * string) array -> unit
+EnvFile.readEnvFile           : string -> Map<string, string>
+EnvFile.writeEnvFile          : string -> string list -> EnvFileSection array -> unit
+EnvFile.defaultSections       : (string * ConfigVarDef array) array -> Map<string, string> -> EnvFileSection array
+EnvFile.missingEntriesHeader  : ConfigVarDef array -> Map<string, string> -> string list
+EnvFile.compareConfigs        : Map<string, string> -> Map<string, string> -> (string * string * string) array
+EnvFile.maskValue             : string -> string -> string
+EnvFile.displayChanges        : (string * string * string) array -> unit
 
 // SsmConfigStore
 SsmConfigStore.getValue      : SsmConfigStore -> string -> string option
