@@ -1,9 +1,9 @@
-module UnionConfig.TextEditor.Tests.ConfigEditorTests
+module UnionConfig.Tests.ConfigEditorTests
 
 open System.IO
 open Xunit
 open Swensen.Unquote
-open UnionConfig.TextEditor.ConfigEditor
+open UnionConfig.ConfigEditor
 open UnionConfig.Verification
 
 module PopulateDefaultsTests =
