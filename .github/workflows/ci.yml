@@ -48,14 +48,6 @@ jobs:
             --coverage \
             --coverage-output-format cobertura \
             --coverage-output "$PWD/coverage/coverage.cobertura.xml"
-          dotnet test --project tests/UnionConfig.Ssm.Tests \
-            --coverage \
-            --coverage-output-format cobertura \
-            --coverage-output "$PWD/coverage/ssm-coverage.cobertura.xml"
-          dotnet test --project tests/UnionConfig.TextEditor.Tests \
-            --coverage \
-            --coverage-output-format cobertura \
-            --coverage-output "$PWD/coverage/texteditor-coverage.cobertura.xml"
 
       - name: Check coverage
         run: dotnet fsi scripts/check-coverage.fsx
@@ -86,10 +78,7 @@ jobs:
         run: dotnet restore
 
       - name: Pack
-        run: |
-          dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release -o ./artifacts
-          dotnet pack src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj -c Release -o ./artifacts
-          dotnet pack src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj -c Release -o ./artifacts
+        run: dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release -o ./artifacts
 
       - name: Upload package
         uses: actions/upload-artifact@v4
@@ -117,10 +106,7 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       - name: Pack
-        run: |
-          dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release --no-build -o ./artifacts
-          dotnet pack src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj -c Release --no-build -o ./artifacts
-          dotnet pack src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj -c Release --no-build -o ./artifacts
+        run: dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release --no-build -o ./artifacts
 
       - name: Get version from tag
         id: version
@@ -139,7 +125,7 @@ jobs:
         id: nuget-login
         uses: nuget/login@v1
         with:
-          user: ${{ vars.NUGET_USER }}
+          user: ${{ vars.NUGET_USERNAME }}
 
       - name: Publish to NuGet
         run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
