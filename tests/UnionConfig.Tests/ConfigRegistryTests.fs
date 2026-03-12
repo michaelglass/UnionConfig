@@ -37,7 +37,7 @@ let private simpleToDef (v: SimpleConfig) : ConfigVarDef =
       ValueType = StringType
       Requirement = Required
       IsSecret = (v = API_KEY)
-      Group = None
+
       Doc =
         { Description = $"Simple config var %s{name}"
           HowToFind = "env"
@@ -56,7 +56,7 @@ let private nestedToDef (v: NestedConfig) : ConfigVarDef =
       ValueType = StringType
       Requirement = Required
       IsSecret = isSecret
-      Group = None
+
       Doc =
         { Description = $"Nested config var %s{name}"
           HowToFind = "env"
