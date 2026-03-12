@@ -6,6 +6,7 @@ output/
 *.nupkg
 *.snupkg
 .vs/
+.fsdocs/
 *.user
 .claude/settings.local.json
 docs/plans/
