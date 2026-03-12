@@ -28,15 +28,10 @@
 
   <!-- F# source files - ORDER MATTERS -->
   <ItemGroup>
-    <Compile Include="SsmClient.fs" />
     <Compile Include="SsmConfigStore.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../UnionConfig/UnionConfig.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="4.0.7.1" />
   </ItemGroup>
 </Project>
