@@ -3,6 +3,8 @@
 
 Type-safe configuration for F# using discriminated unions. Read from env vars, `.env` files, or AWS SSM Parameter Store with typed parsing, validation, and secret masking.
 
+**One package, zero external dependencies.**
+
 ```fsharp
 type AppConfig =
     | DatabaseUrl
@@ -186,18 +188,21 @@ displayVerificationResults results
 <!-- sync:ssm -->
 ## AWS SSM Parameter Store
 
+UnionConfig includes an SSM config store that works with any parameter store backend. You provide the operations; UnionConfig handles path mapping, secret detection, and change application.
+
 ```fsharp
-open UnionConfig.Ssm.SsmClient
-open UnionConfig.Ssm.SsmConfigStore
+open UnionConfig.SsmConfigStore
 
-// Low-level
-let result = getParameter config "/app/DATABASE_URL"
-let ok = setParameter config "/app/MAX_RETRIES" "5" false
-let all = getParametersByPath config "/app/"
+// Provide your own SSM operations (e.g., via AWSSDK.SSM)
+let ops: SsmOperations =
+    { GetParameter = fun path -> (* your implementation *) None
+      SetParameter = fun path value isSecure -> (* your implementation *) Ok()
+      DeleteParameter = fun path -> (* your implementation *) Ok()
+      GetParametersByPath = fun prefix -> (* your implementation *) [] }
 
-// High-level store with path mapping
+// Create a store with path mapping
 let store: SsmConfigStore =
-    { Config = SsmClientConfig.Default
+    { Operations = ops
       PathMapping =
         { ToPath = fun name -> $"/myapp/staging/%s{name}"
           FromPath = fun path -> path.Replace("/myapp/staging/", "")
@@ -215,7 +220,7 @@ let results = applyChanges store changes       // (key * success * wasDelete) ar
 ## Interactive Editor
 
 ```fsharp
-open UnionConfig.TextEditor.ConfigEditor
+open UnionConfig.ConfigEditor
 
 // Apply defaults without opening editor
 let result = populateDefaults getValueFn setValueFn getDefaultsFn writeLocalFileFn
@@ -277,6 +282,17 @@ EnvFile.defaultSections  : (string * ConfigVarDef array) array -> Map<string, st
 EnvFile.compareConfigs   : Map<string, string> -> Map<string, string> -> (string * string * string) array
 EnvFile.maskValue        : string -> string -> string
 EnvFile.displayChanges   : (string * string * string) array -> unit
+
+// SsmConfigStore
+SsmConfigStore.getValue      : SsmConfigStore -> string -> string option
+SsmConfigStore.setValue      : SsmConfigStore -> string -> string -> bool
+SsmConfigStore.deleteValue   : SsmConfigStore -> string -> bool
+SsmConfigStore.loadAll       : SsmConfigStore -> string array -> Map<string, string>
+SsmConfigStore.applyChanges  : SsmConfigStore -> (string * string * string) array -> (string * bool * bool) array
+
+// ConfigEditor
+ConfigEditor.populateDefaults : (string -> string option) -> ... -> PopulateResult
+ConfigEditor.editConfig       : (unit -> Map<string, string>) -> ... -> unit
 
 // Verification
 Verification.displayVerificationResults : (string * VerificationResult) array -> unit
