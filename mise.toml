@@ -81,6 +81,10 @@ description = "Create NuGet packages"
 run = "dotnet pack src/UnionConfig/UnionConfig.fsproj -c Release"
 depends = ["build"]
 
+[tasks.release]
+description = "Release with automatic semantic versioning"
+run = "dotnet fsi scripts/release.fsx {{arg(name=\"command\", default=\"\")}}"
+
 [tasks.docs]
 description = "Generate API documentation"
 run = "dotnet fsdocs build --output output/docs --clean"
