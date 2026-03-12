@@ -32,5 +32,6 @@
     <Compile Include="Verification.fs" />
     <Compile Include="Reader.fs" />
     <Compile Include="EnvFile.fs" />
+    <Compile Include="ConfigRegistry.fs" />
   </ItemGroup>
 </Project>
