@@ -1,7 +1,7 @@
 <!-- sync:intro -->
 # UnionConfig
 
-Type-safe configuration management for F# applications. Define your config variables as discriminated unions, then read from environment variables, `.env` files, or AWS SSM Parameter Store with automatic parsing, validation, and secret masking.
+Type-safe configuration for F# using discriminated unions. Read from env vars, `.env` files, or AWS SSM Parameter Store with typed parsing, validation, and secret masking.
 
 ```fsharp
 type AppConfig =
@@ -18,7 +18,6 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          Group = None
           Doc =
             { Description = "PostgreSQL connection string"
               HowToFind = "Check your database provider dashboard"
@@ -29,9 +28,8 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = true
-          Group = None
           Doc =
-            { Description = "External API key for third-party service"
+            { Description = "External API key"
               HowToFind = "Generate at https://dashboard.example.com/keys"
               ManagementUrl = Some(Uri "https://dashboard.example.com/keys") } }
     | MaxRetries ->
@@ -40,9 +38,8 @@ let configDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
-          Group = None
           Doc =
-            { Description = "Maximum retry attempts for failed requests"
+            { Description = "Max retry attempts"
               HowToFind = "Set to desired retry count (default: 3)"
               ManagementUrl = None } }
     | DebugMode ->
@@ -51,20 +48,11 @@ let configDef =
           ValueType = BoolType
           Requirement = Optional
           IsSecret = false
-          Group = None
           Doc =
             { Description = "Enable debug logging"
               HowToFind = "Set to true or 1 to enable"
               ManagementUrl = None } }
 ```
-
-**What you get:**
-- Typed parsing (string, int, bool, float, custom validators)
-- Required vs optional with compile-time awareness
-- Secret masking for safe logging
-- `.env` file diffing to detect config drift
-- AWS SSM Parameter Store backend
-- Interactive editor workflow for config management
 <!-- sync:intro:end -->
 
 ## Installation
@@ -83,89 +71,71 @@ dotnet add package UnionConfig.TextEditor
 **[API Reference](reference/index.html)**
 
 <!-- sync:reading -->
-## Reading Config from Environment
-
-From [`examples/ExampleApp/Program.fs`](examples/ExampleApp/Program.fs):
+## Reading Config
 
 ```fsharp
 open UnionConfig.Types
 open UnionConfig.Reader
 
-// readString: reads string value
 let dbUrl = readString (configDef DatabaseUrl)
-
-// readInt: reads int value (fails if not set)
 let retries = readInt (configDef MaxRetries)
-
-// readBool: reads bool value (fails if not set)
 let debug = readBool (configDef DebugMode)
-
-// readIntOrDefault: reads int with fallback
 let dbPort = readIntOrDefault (configDef DatabasePort) 5432
 
-// readBoolOrDefault: reads bool with fallback
-let newUi = readBoolOrDefault (configDef FeatureNewUi) false
-
-// read: returns ConfigValue option for pattern matching
+// read returns Result<ConfigValue option, string>
 match read (configDef LogLevel) with
-| Some(StringValue level) -> printfn "  LOG_LEVEL:         %s" level
-| _ -> printfn "  LOG_LEVEL:         (not set)"
-
-match read (configDef RequestTimeout) with
-| Some(FloatValue timeout) -> printfn "  REQUEST_TIMEOUT:   %.1f" timeout
-| _ -> printfn "  REQUEST_TIMEOUT:   (not set)"
+| Ok(Some(StringValue level)) -> printfn "LOG_LEVEL: %s" level
+| Ok None -> printfn "LOG_LEVEL: (not set)"
+| Error msg -> printfn "LOG_LEVEL error: %s" msg
 ```
 <!-- sync:reading:end -->
 
 <!-- sync:extraction -->
-## ConfigValue Extraction Helpers
+## ConfigValue Extraction
 
-Pipeline-friendly typed extraction from `ConfigValue option`:
+Pipeline-friendly typed extraction:
 
 ```fsharp
-// ConfigValue.string: extract string (required, fails if None)
-let dbUrl = read (configDef DatabaseUrl) |> ConfigValue.string
+let dbUrl = read (configDef DatabaseUrl) |> Result.map ConfigValue.stringOption
+let retries = read (configDef MaxRetries) |> Result.map ConfigValue.intOption
+let debug = read (configDef DebugMode) |> Result.map ConfigValue.boolOption
+let timeout = read (configDef RequestTimeout) |> Result.map ConfigValue.floatOption
 
-// ConfigValue.stringOption: extract string (optional, returns None if missing)
-let cacheHost = read (configDef CacheHost) |> ConfigValue.stringOption
-
-// ConfigValue.int / intOption
-let retries = read (configDef MaxRetries) |> ConfigValue.int
-let portOpt = read (configDef DatabasePort) |> ConfigValue.intOption
-
-// ConfigValue.bool / boolOption
-let debug = read (configDef DebugMode) |> ConfigValue.bool
-let newUiOpt = read (configDef FeatureNewUi) |> ConfigValue.boolOption
-
-// ConfigValue.float / floatOption
-let timeout = read (configDef RequestTimeout) |> ConfigValue.float
-let timeoutOpt = read (configDef RequestTimeout) |> ConfigValue.floatOption
-
-// ConfigValue.custom / customOption: parse custom type
+// Custom parsing
 let parseLogLevel (s: string) =
     match s.ToLowerInvariant() with
-    | "debug" -> Some "DEBUG"
-    | "info" -> Some "INFO"
-    | "warn" -> Some "WARN"
-    | "error" -> Some "ERROR"
+    | "debug" | "info" | "warn" | "error" -> Some(s.ToUpperInvariant())
     | _ -> None
 
-let level = read (configDef LogLevel) |> ConfigValue.custom parseLogLevel
-let levelOpt = read (configDef LogLevel) |> ConfigValue.customOption parseLogLevel
+let level = read (configDef LogLevel) |> Result.map (ConfigValue.customOption parseLogLevel)
 ```
 <!-- sync:extraction:end -->
+
+<!-- sync:registry -->
+## ConfigRegistry
+
+Reflection-based DU case discovery -- no manual `allCases` arrays:
+
+```fsharp
+open UnionConfig.ConfigRegistry
+
+// Flat discovery
+let allDefs = allDefs<AppConfig> configDef
+let lookup = byName allDefs
+let varNames = names allDefs
+
+// Grouped discovery (nested DUs -> groups by wrapper case name)
+let grouped = allDefsGrouped<AppConfig> configDef
+// Returns: (string * ConfigVarDef array) array
+```
+<!-- sync:registry:end -->
 
 <!-- sync:validation -->
 ## Validation
 
 ```fsharp
-// Validate all required vars at startup
 let errors = validateRequired allDefs
-
-// Unset a required var and validate again
-Environment.SetEnvironmentVariable("DATABASE_URL", null)
-let errors2 = validateRequired allDefs
-// errors2 = ["DATABASE_URL: required but not set"]
+// errors = ["DATABASE_URL: required but not set"; ...]
 ```
 <!-- sync:validation:end -->
 
@@ -175,22 +145,19 @@ let errors2 = validateRequired allDefs
 ```fsharp
 open UnionConfig.EnvFile
 
-// readEnvFile: parse .env file into Map
-let config = readEnvFile envPath
+let config = readEnvFile ".env"
 
-// maskValue: mask sensitive values based on key name
-for kvp in config do
-    let display = maskValue kvp.Key kvp.Value
-    printfn "    %s = %s" kvp.Key display
-
-// compareConfigs: detect differences between two config maps
+// Diff two configs
 let changes = compareConfigs staging prod
-
-// displayChanges: show config differences with masking
 displayChanges changes
-```
 
-`secretKeyIndicators` controls which key names trigger masking: `PASSWORD`, `SECRET`, `KEY`, `API_KEY`, `SIGNING`, `TOKEN`.
+// Secret masking (PASSWORD, SECRET, KEY, API_KEY, SIGNING, TOKEN)
+let display = maskValue "API_KEY" "sk-1234"  // "sk-1***"
+
+// Write sectioned .env file from grouped defs
+let sections = defaultSections (allDefsGrouped<AppConfig> configDef) currentValues
+writeEnvFile ".env" sections
+```
 <!-- sync:envfile:end -->
 
 <!-- sync:verification -->
@@ -200,24 +167,18 @@ displayChanges changes
 open UnionConfig.Verification
 
 let results =
-    allConfigs
-    |> List.map (fun config ->
-        let def = configDef config
-
+    allDefs
+    |> Array.map (fun def ->
         let result =
             match def.Kind with
             | Infrastructure -> VerifySkipped "managed by infrastructure"
-            | AutoProvisioned -> VerifySkipped "auto-provisioned by setup script"
-            | Manual
-            | AutoGenerated _ ->
+            | AutoProvisioned -> VerifySkipped "auto-provisioned"
+            | Manual | AutoGenerated _ ->
                 match read def with
-                | Some _ -> VerifySuccess $"set (%A{def.ValueType})"
-                | None -> VerifyFailed "not set"
-
+                | Ok(Some _) -> VerifySuccess $"set (%A{def.ValueType})"
+                | _ -> VerifyFailed "not set"
         (def.Name, result))
-    |> Array.ofList
 
-// displayVerificationResults: colored output of verification state
 displayVerificationResults results
 ```
 <!-- sync:verification:end -->
@@ -229,62 +190,37 @@ displayVerificationResults results
 open UnionConfig.Ssm.SsmClient
 open UnionConfig.Ssm.SsmConfigStore
 
-// SsmClientConfig: configure region and auth hook
-let config =
-    { SsmClientConfig.Default with
-        EnsureAuth = fun () -> printfn "  (auth hook called)" }
+// Low-level
+let result = getParameter config "/app/DATABASE_URL"
+let ok = setParameter config "/app/MAX_RETRIES" "5" false
+let all = getParametersByPath config "/app/"
 
-// Low-level SSM operations
-let result = getParameter config "/unionconfig-demo/test"
-let setResult = setParameter config "/unionconfig-demo/test" "hello" false
-let params = getParametersByPath config "/unionconfig-demo/"
-let deleteResult = deleteParameter config "/unionconfig-demo/test"
-
-// SsmPathMapping: map config var names to SSM parameter paths
-let pathMapping: SsmPathMapping =
-    { ToPath = fun name -> $"/myapp/staging/%s{name}"
-      FromPath = fun path -> path.Replace("/myapp/staging/", "")
-      PathPrefix = "/myapp/staging/" }
-
-// SsmConfigStore: ties together client config, path mapping, and secret detection
+// High-level store with path mapping
 let store: SsmConfigStore =
     { Config = SsmClientConfig.Default
-      PathMapping = pathMapping
-      IsSecret = fun name -> (configDef ApiKey).IsSecret && name = "API_KEY" }
+      PathMapping =
+        { ToPath = fun name -> $"/myapp/staging/%s{name}"
+          FromPath = fun path -> path.Replace("/myapp/staging/", "")
+          PathPrefix = "/myapp/staging/" }
+      IsSecret = fun name -> name = "API_KEY" }
 
-// High-level store operations
 let value = getValue store "DATABASE_URL"      // string option
 let ok = setValue store "MAX_RETRIES" "5"       // bool
-let deleted = deleteValue store "MAX_RETRIES"   // bool
-let all = loadAll store varNames                // Map<string, string>
-
-// applyChanges: apply a set of changes (sets and deletes)
-let changes = [| ("MAX_RETRIES", "3", "5"); ("LOG_LEVEL", "info", "") |]
-let results = applyChanges store changes
-// Array of (key, success, wasDelete)
+let all = loadAll store varNames               // Map<string, string>
+let results = applyChanges store changes       // (key * success * wasDelete) array
 ```
 <!-- sync:ssm:end -->
 
 <!-- sync:texteditor -->
-## Interactive Editor Workflow
+## Interactive Editor
 
 ```fsharp
 open UnionConfig.TextEditor.ConfigEditor
 
-// populateDefaults: apply default values without opening an editor
+// Apply defaults without opening editor
 let result = populateDefaults getValueFn setValueFn getDefaultsFn writeLocalFileFn
 
-match result with
-| NoChangesNeeded -> printfn "  populateDefaults: no changes needed"
-| Applied count -> printfn "  populateDefaults: applied %d defaults" count
-| Failed errors -> printfn "  populateDefaults: failed for %A" errors
-
-// editConfig: full interactive editor workflow
-// 1. Loads current config into a temp .env file
-// 2. Opens $EDITOR
-// 3. Diffs changes when you save and close
-// 4. Runs verification on changed values
-// 5. Confirms before applying
+// Full workflow: load -> $EDITOR -> diff -> verify -> confirm -> apply
 editConfig loadConfigFn setValueFn writeConfigFileFn verifyChangesFn
 ```
 <!-- sync:texteditor:end -->
@@ -294,25 +230,16 @@ editConfig loadConfigFn setValueFn writeConfigFileFn verifyChangesFn
 See the [Example App](https://github.com/michaelglass/union-config/tree/main/examples/ExampleApp) for a complete working example covering the full public API.
 
 <!-- sync:types -->
-### Core Types
+### Types
 
 ```fsharp
-// How a var gets its value
 type ConfigVarKind = Manual | AutoGenerated of string option | Infrastructure | AutoProvisioned
-
-// Runtime value type (determines parsing)
 type ConfigValueType = StringType | IntType | BoolType | FloatType
                      | CustomType of typeName: string * validate: (string -> string option)
-
-// Required (fail if missing) or Optional (return None)
 type ConfigRequirement = Required | Optional
-
-// Full var definition
 type ConfigVarDef = {
     Name: string; Kind: ConfigVarKind; ValueType: ConfigValueType
     Requirement: ConfigRequirement; IsSecret: bool; Doc: ConfigVarDoc }
-
-// Parsed value
 type ConfigValue = StringValue of string | IntValue of int | BoolValue of bool | FloatValue of float
 ```
 <!-- sync:types:end -->
@@ -321,8 +248,8 @@ type ConfigValue = StringValue of string | IntValue of int | BoolValue of bool |
 ### Key Functions
 
 ```fsharp
-// Reader module
-Reader.read              : ConfigVarDef -> ConfigValue option
+// Reader
+Reader.read              : ConfigVarDef -> Result<ConfigValue option, string>
 Reader.readString        : ConfigVarDef -> string
 Reader.readInt           : ConfigVarDef -> int
 Reader.readBool          : ConfigVarDef -> bool
@@ -330,29 +257,31 @@ Reader.readIntOrDefault  : ConfigVarDef -> int -> int
 Reader.readBoolOrDefault : ConfigVarDef -> bool -> bool
 Reader.validateRequired  : ConfigVarDef seq -> string list
 
-// EnvFile module
+// ConfigValue extraction
+ConfigValue.string / stringOption  : ConfigValue option -> string / string option
+ConfigValue.int / intOption        : ConfigValue option -> int / int option
+ConfigValue.bool / boolOption      : ConfigValue option -> bool / bool option
+ConfigValue.float / floatOption    : ConfigValue option -> float / float option
+ConfigValue.custom / customOption  : (string -> 'T option) -> ConfigValue option -> 'T / 'T option
+
+// ConfigRegistry
+ConfigRegistry.allDefs<'T>        : ('T -> ConfigVarDef) -> ConfigVarDef array
+ConfigRegistry.allDefsGrouped<'T> : ('T -> ConfigVarDef) -> (string * ConfigVarDef array) array
+ConfigRegistry.byName             : ConfigVarDef array -> Map<string, ConfigVarDef>
+ConfigRegistry.names              : ConfigVarDef array -> string array
+
+// EnvFile
 EnvFile.readEnvFile      : string -> Map<string, string>
+EnvFile.writeEnvFile     : string -> EnvFileSection array -> unit
+EnvFile.defaultSections  : (string * ConfigVarDef array) array -> Map<string, string> -> EnvFileSection array
 EnvFile.compareConfigs   : Map<string, string> -> Map<string, string> -> (string * string * string) array
 EnvFile.maskValue        : string -> string -> string
-EnvFile.openInEditor     : string -> string -> unit
 EnvFile.displayChanges   : (string * string * string) array -> unit
 
-// Verification module
+// Verification
 Verification.displayVerificationResults : (string * VerificationResult) array -> unit
 
-// ConfigValue extraction helpers
-ConfigValue.string       : ConfigValue option -> string
-ConfigValue.stringOption : ConfigValue option -> string option
-ConfigValue.int          : ConfigValue option -> int
-ConfigValue.intOption    : ConfigValue option -> int option
-ConfigValue.bool         : ConfigValue option -> bool
-ConfigValue.boolOption   : ConfigValue option -> bool option
-ConfigValue.float        : ConfigValue option -> float
-ConfigValue.floatOption  : ConfigValue option -> float option
-ConfigValue.custom       : (string -> 'T option) -> ConfigValue option -> 'T
-ConfigValue.customOption : (string -> 'T option) -> ConfigValue option -> 'T option
-
-// Parsing utilities
+// Parsing
 parseBool  : string -> bool option
 parseValue : ConfigValueType -> string -> Result<ConfigValue, string>
 ```

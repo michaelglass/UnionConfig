@@ -16,6 +16,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>5</WarningLevel>
+    <WarnOn>3390;1104;0020;0044;0025;0067;0021;1182</WarnOn>
     <NoWarn>$(NoWarn);NETSDK1188</NoWarn>
   </PropertyGroup>
 

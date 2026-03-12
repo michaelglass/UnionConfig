@@ -239,6 +239,42 @@ module EditConfigWithTests =
         finally
             System.Console.SetOut(original)
 
+    [<Fact>]
+    let ``applies changes with mixed verification results (success and skipped)`` () =
+        let sw = new StringWriter()
+        let original = System.Console.Out
+        System.Console.SetOut(sw)
+
+        try
+            let config = Map.ofList [ "DB_HOST", "localhost" ]
+            let mutable applied = Map.empty<string, string>
+            let loadConfig () = config
+
+            let writeConfigFile (path: string) (cfg: Map<string, string>) =
+                let lines = cfg |> Map.toArray |> Array.map (fun (k, v) -> $"%s{k}=%s{v}")
+                File.WriteAllLines(path, lines)
+
+            let runEditor (path: string) =
+                File.WriteAllText(path, "DB_HOST=new-host\nAPI_KEY=secret")
+
+            let getConfirmation () = "y"
+
+            let setValue name value =
+                applied <- Map.add name value applied
+                true
+
+            let verifyChanges _ _ =
+                [| ("DB_HOST", VerifySuccess "ok")
+                   ("API_KEY", VerifySkipped "managed by infra") |]
+
+            editConfigWith runEditor getConfirmation loadConfig setValue writeConfigFile verifyChanges
+
+            let output = sw.ToString()
+            test <@ output.Contains("Done!") @>
+            test <@ Map.find "DB_HOST" applied = "new-host" @>
+        finally
+            System.Console.SetOut(original)
+
 module EditConfigPublicApiTests =
     [<Fact>]
     let ``editConfig no changes path`` () =

@@ -66,16 +66,12 @@ type ConfigVarDoc =
 /// Core definition of a config variable (enough to read, parse, validate)
 [<NoComparison; NoEquality>]
 type ConfigVarDef =
-    {
-        Name: string
-        Kind: ConfigVarKind
-        ValueType: ConfigValueType
-        Requirement: ConfigRequirement
-        IsSecret: bool
-        /// Optional group name for organizing config vars by module or category.
-        Group: string option
-        Doc: ConfigVarDoc
-    }
+    { Name: string
+      Kind: ConfigVarKind
+      ValueType: ConfigValueType
+      Requirement: ConfigRequirement
+      IsSecret: bool
+      Doc: ConfigVarDoc }
 
 // =============================================================================
 // Parsing Utilities

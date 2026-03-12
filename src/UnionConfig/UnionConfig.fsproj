@@ -16,6 +16,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>5</WarningLevel>
+    <WarnOn>3390;1104;0020;0044;0025;0067;0021;1182</WarnOn>
     <!-- NETSDK1188: harmless locale warnings from FSharp.Core -->
     <NoWarn>$(NoWarn);NETSDK1188</NoWarn>
   </PropertyGroup>
@@ -32,5 +33,6 @@
     <Compile Include="Verification.fs" />
     <Compile Include="Reader.fs" />
     <Compile Include="EnvFile.fs" />
+    <Compile Include="ConfigRegistry.fs" />
   </ItemGroup>
 </Project>
