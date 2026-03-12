@@ -17,15 +17,8 @@ open System.Text.RegularExpressions
 // Configuration
 // ============================================================================
 
-let fsprojs =
-    [| "src/UnionConfig/UnionConfig.fsproj"
-       "src/UnionConfig.Ssm/UnionConfig.Ssm.fsproj"
-       "src/UnionConfig.TextEditor/UnionConfig.TextEditor.fsproj" |]
-
-let dllPaths =
-    [| "src/UnionConfig/bin/Release/net10.0/UnionConfig.dll"
-       "src/UnionConfig.Ssm/bin/Release/net10.0/UnionConfig.Ssm.dll"
-       "src/UnionConfig.TextEditor/bin/Release/net10.0/UnionConfig.TextEditor.dll" |]
+let fsproj = "src/UnionConfig/UnionConfig.fsproj"
+let dllPath = "src/UnionConfig/bin/Release/net10.0/UnionConfig.dll"
 
 let extractScript = "scripts/extract-api.fsx"
 
@@ -80,11 +73,7 @@ let extractApi (dllPath: string) : string list =
 
 let extractCurrentApi () : string list =
     runOrFail "dotnet" "build -c Release --verbosity quiet" |> ignore
-
-    dllPaths
-    |> Array.collect (fun dll ->
-        extractApi (Path.GetFullPath dll) |> List.toArray)
-    |> Array.toList
+    extractApi (Path.GetFullPath dllPath)
 
 let extractApiFromTag (tag: string) : string list =
     let tempDir =
@@ -96,15 +85,11 @@ let extractApiFromTag (tag: string) : string list =
         runOrFail "git" (sprintf "clone --depth 1 --branch %s file://%s %s" tag repoPath tempDir)
         |> ignore
 
-        for fsproj in fsprojs do
-            runOrFail "dotnet" (sprintf "build %s/%s -c Release --verbosity quiet" tempDir fsproj)
-            |> ignore
+        runOrFail "dotnet" (sprintf "build %s/%s -c Release --verbosity quiet" tempDir fsproj)
+        |> ignore
 
-        dllPaths
-        |> Array.collect (fun dll ->
-            let tempDllPath = Path.Combine(tempDir, dll)
-            extractApi tempDllPath |> List.toArray)
-        |> Array.toList
+        let tempDllPath = Path.Combine(tempDir, dllPath)
+        extractApi tempDllPath
     with ex ->
         if Directory.Exists(tempDir) then
             try
@@ -131,7 +116,7 @@ let compareApi (oldApi: string list) (newApi: string list) : ApiChange =
     | [], [] -> NoChange
 
 let getMajorVersion () =
-    let content = File.ReadAllText(fsprojs.[0])
+    let content = File.ReadAllText(fsproj)
     let m = Regex.Match(content, @"<Version>(\d+)\.")
     if m.Success then int m.Groups.[1].Value else 0
 
