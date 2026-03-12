@@ -31,7 +31,14 @@ let private enumerateAll<'T> () : 'T array =
 
                    if innerFields.Length = 0 then
                        let innerValue = FSharpValue.MakeUnion(innerCase, [||])
-                       yield FSharpValue.MakeUnion(case, [| innerValue |]) :?> 'T |]
+                       yield FSharpValue.MakeUnion(case, [| innerValue |]) :?> 'T
+                   else
+                       failwithf
+                           "Nested DU case '%s.%s' has fields — only fieldless leaf cases are supported"
+                           case.Name
+                           innerCase.Name
+           else
+               failwithf "Case '%s' has unsupported payload — expected no fields or a single nested DU" case.Name |]
 
 /// Get the wrapper case name for a value (Some for nested, None for flat).
 let private getWrapperCaseName<'T> (value: 'T) : string option =

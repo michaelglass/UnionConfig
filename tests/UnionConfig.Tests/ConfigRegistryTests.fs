@@ -1,6 +1,5 @@
 module UnionConfig.Tests.ConfigRegistryTests
 
-open System
 open Xunit
 open Swensen.Unquote
 open UnionConfig.Types
