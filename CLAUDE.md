@@ -20,7 +20,19 @@ mise run format             # Format with Fantomas
 mise run check              # All checks with auto-fix (format, lint, test)
 mise run ci                 # All CI checks without auto-fix
 mise run pack               # Create NuGet package
+mise run coverage-check     # Check per-file coverage (CoverageRatchet)
+mise run coverage-ratchet   # Ratchet coverage thresholds to current values
+mise run sync-docs          # Sync README to docs (SyncDocs)
+mise run sync-docs-check    # Check docs sync
+mise run release            # Release with semantic versioning (FsSemanticTagger)
+mise run release-alpha      # Release an alpha version
 ```
+
+### Tools (dotnet local tools)
+
+- **CoverageRatchet** -- per-file coverage enforcement with automatic threshold ratcheting (replaces scripts/check-coverage.fsx)
+- **SyncDocs** -- README-to-docs section syncing (replaces scripts/sync-docs.fsx)
+- **FsSemanticTagger** -- semantic versioning with API change detection (replaces scripts/release.fsx, scripts/check-api.fsx, scripts/extract-api.fsx)
 
 **Running tests directly:**
 ```bash
