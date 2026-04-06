@@ -4,21 +4,19 @@ on:
   push:
     tags:
       - 'v*'
-      - '!v*-alpha*'
-      - '!v*-beta*'
-      - '!v*-rc*'
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   docs:
+    if: "!contains(github.ref, '-alpha') && !contains(github.ref, '-beta') && !contains(github.ref, '-rc')"
     uses: michaelglass/MichaelsWackyFsPackageTools/.github/workflows/michaels-wacky-docs.yml@main
     with:
       fsdocs-parameters: '--parameters root /UnionConfig/'
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
