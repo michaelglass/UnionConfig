@@ -16,6 +16,9 @@ jobs:
       package-name: UnionConfig
       fsproj-path: src/UnionConfig/UnionConfig.fsproj
 
+  # NuGet Trusted Publishing requires nuget/login to run in the calling repo's
+  # workflow, not a reusable workflow from another repo. The OIDC token's
+  # job_workflow_ref must match the repo's own workflow file.
   publish:
     runs-on: ubuntu-latest
     needs: release
