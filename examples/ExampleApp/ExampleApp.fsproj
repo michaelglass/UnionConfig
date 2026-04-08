@@ -3,6 +3,9 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Disable SourceLink when no .git directory exists (jj without colocated git) -->
+    <EnableSourceLink Condition="!Exists('$(MSBuildThisFileDirectory)../../.git')">false</EnableSourceLink>
+    <EnableSourceControlManagerQueries Condition="!Exists('$(MSBuildThisFileDirectory)../../.git')">false</EnableSourceControlManagerQueries>
     <!-- NETSDK1188: harmless locale warnings from FSharp.Core -->
     <NoWarn>$(NoWarn);NETSDK1188</NoWarn>
   </PropertyGroup>
