@@ -420,6 +420,13 @@ module MissingEntriesHeaderTests =
         test <@ header |> List.exists (fun l -> l.Contains("[AutoProvisioned]")) @>
 
     [<Fact>]
+    let ``missingEntriesHeader shows External kind`` () =
+        let defs = [| mkDef "DB_AUTH_TOKEN" External Required "Operator-set IAM token" |]
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("[External]")) @>
+
+    [<Fact>]
     let ``missingEntriesHeader ends with empty line`` () =
         let defs = [| mkDef "DB_HOST" Manual Required "Host" |]
         let values = Map.empty
