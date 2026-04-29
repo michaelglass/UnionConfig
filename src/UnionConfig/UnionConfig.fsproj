@@ -8,7 +8,7 @@
 
     <!-- Package metadata -->
     <PackageId>UnionConfig</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>Michael Glass</Authors>
     <Description>Type-safe configuration management using F# discriminated unions. Includes env reader, .env file operations, SSM parameter store backend, verification, and interactive text editor workflow.</Description>
     <PackageTags>fsharp;configuration;discriminated-union;env;dotenv;ssm;parameter-store;editor</PackageTags>

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-04-29
+
 - feat: add `External` `ConfigVarKind` for runtime-only values (operator-injected tokens, sidecar secrets) that must never be persisted to `.env` or SSM
 - feat: add `ConfigVarKind.isPersistable` helper for filtering vars before env-edit / SSM-write flows
 - fix: disable SourceLink when no .git directory exists (jj without colocated git)
