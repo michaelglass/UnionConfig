@@ -40,6 +40,7 @@ let private simpleToDef (v: SimpleConfig) : ConfigVarDef =
       ValueType = StringType
       Requirement = Required
       IsSecret = (v = API_KEY)
+      DefaultValue = None
 
       Doc =
         { Description = $"Simple config var %s{name}"
@@ -59,6 +60,7 @@ let private nestedToDef (v: NestedConfig) : ConfigVarDef =
       ValueType = StringType
       Requirement = Required
       IsSecret = isSecret
+      DefaultValue = None
 
       Doc =
         { Description = $"Nested config var %s{name}"
@@ -71,6 +73,7 @@ let private dummyToDef (_: UnsupportedConfig) : ConfigVarDef =
       ValueType = StringType
       Requirement = Required
       IsSecret = false
+      DefaultValue = None
 
       Doc =
         { Description = "dummy"
@@ -175,6 +178,7 @@ module ErrorCasesTests =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
+          DefaultValue = None
           Doc =
             { Description = "dummy"
               HowToFind = ""
@@ -194,6 +198,7 @@ module ErrorCasesTests =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
+          DefaultValue = None
           Doc =
             { Description = "dummy"
               HowToFind = ""
@@ -212,6 +217,7 @@ module ErrorCasesTests =
               ValueType = StringType
               Requirement = Required
               IsSecret = false
+              DefaultValue = None
               Doc =
                 { Description = "dummy"
                   HowToFind = ""

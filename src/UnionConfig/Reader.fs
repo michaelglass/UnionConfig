@@ -6,16 +6,32 @@ open UnionConfig.Types
 
 /// Read a config var from environment, parse to typed value.
 /// Returns Result for composable error handling:
-/// - Required missing/empty → Error with message
+/// - Required missing/empty → Error with message (or `DefaultValue` if set)
 /// - Required invalid → Error with parse message
-/// - Optional missing/empty → Ok None
+/// - Optional missing/empty → Ok None (or `DefaultValue` if set)
 /// - Optional invalid → Error with parse message
 /// - Valid → Ok (Some value)
+///
+/// `DefaultValue` only applies when the environment variable is missing or
+/// whitespace-only. A set env var always wins. The default itself is parsed
+/// through `parseValue`, so a malformed default surfaces as a parse Error.
 let read (def: ConfigVarDef) : Result<ConfigValue option, string> =
     // fsharplint:disable-next-line Hints
     let rawValue = Environment.GetEnvironmentVariable(def.Name) |> Option.ofObj
 
-    match def.Requirement, rawValue with
+    let isAbsent =
+        match rawValue with
+        | None -> true
+        | Some v -> String.IsNullOrWhiteSpace v
+
+    // When no default is configured, keep the raw value so the match below can still
+    // distinguish "required but not set" from "required but empty".
+    let effective =
+        match def.DefaultValue with
+        | Some d when isAbsent -> Some d
+        | _ -> rawValue
+
+    match def.Requirement, effective with
     | Required, None -> Error $"%s{def.Name} is required but not set"
     | Required, Some value when String.IsNullOrWhiteSpace(value) -> Error $"%s{def.Name} is required but empty"
     | Required, Some value ->

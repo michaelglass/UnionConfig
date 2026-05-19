@@ -141,6 +141,9 @@ let errors = validateRequired allDefs
 ```
 <!-- sync:validation:end -->
 
+<!-- sync:defaults:start -->
+<!-- sync:defaults:end -->
+
 <!-- sync:external:start -->
 <!-- sync:external:end -->
 
@@ -269,7 +272,8 @@ type ConfigValueType = StringType | IntType | BoolType | FloatType
 type ConfigRequirement = Required | Optional
 type ConfigVarDef = {
     Name: string; Kind: ConfigVarKind; ValueType: ConfigValueType
-    Requirement: ConfigRequirement; IsSecret: bool; Doc: ConfigVarDoc }
+    Requirement: ConfigRequirement; IsSecret: bool
+    DefaultValue: string option; Doc: ConfigVarDoc }
 type ConfigValue = StringValue of string | IntValue of int | BoolValue of bool | FloatValue of float
 ```
 <!-- sync:types:end -->

@@ -39,6 +39,7 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "PostgreSQL connection string"
@@ -50,6 +51,7 @@ let configDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Database port number"
@@ -61,6 +63,7 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = true
+          DefaultValue = None
 
           Doc =
             { Description = "External API key for third-party service"
@@ -72,6 +75,7 @@ let configDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Maximum retry attempts for failed requests"
@@ -83,6 +87,7 @@ let configDef =
           ValueType = BoolType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Enable debug logging"
@@ -104,6 +109,7 @@ let configDef =
             )
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Application log level"
@@ -115,6 +121,7 @@ let configDef =
           ValueType = BoolType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Feature flag: enable new UI"
@@ -126,6 +133,7 @@ let configDef =
           ValueType = FloatType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "HTTP request timeout in seconds"
@@ -137,6 +145,7 @@ let configDef =
           ValueType = StringType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Redis cache hostname set by infrastructure"
@@ -148,6 +157,7 @@ let configDef =
           ValueType = StringType
           Requirement = Optional
           IsSecret = true
+          DefaultValue = None
 
           Doc =
             { Description = "Webhook signing secret"
@@ -159,6 +169,7 @@ let configDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = true
+          DefaultValue = None
 
           Doc =
             { Description = "Short-lived IAM auth token injected by the runtime"
@@ -770,6 +781,7 @@ let groupedConfigDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Database hostname"
@@ -781,6 +793,7 @@ let groupedConfigDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Database port number"
@@ -792,6 +805,7 @@ let groupedConfigDef =
           ValueType = StringType
           Requirement = Required
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "Base URL for the API"
@@ -803,6 +817,7 @@ let groupedConfigDef =
           ValueType = IntType
           Requirement = Optional
           IsSecret = false
+          DefaultValue = None
 
           Doc =
             { Description = "API request timeout in seconds"
@@ -954,6 +969,59 @@ let demoExternalKind () =
     printfn ""
 
 // =============================================================================
+// 19. Demonstrate DefaultValue fallback
+// =============================================================================
+
+let demoDefaultValue () =
+    printfn "== DefaultValue fallback =="
+    printfn ""
+
+    let awsRegion =
+        { Name = "AWS_REGION_DEMO"
+          Kind = Manual
+          ValueType = StringType
+          Requirement = Required
+          IsSecret = false
+          DefaultValue = Some "eu-central-1"
+          Doc =
+            { Description = "AWS region with static fallback"
+              HowToFind = "Defaults to eu-central-1 when unset"
+              ManagementUrl = None } }
+
+    Environment.SetEnvironmentVariable("AWS_REGION_DEMO", null)
+
+    match read awsRegion with
+    | Ok(Some(StringValue r)) -> printfn "  unset      -> Ok (Some \"%s\")  (from DefaultValue)" r
+    | other -> printfn "  unset      -> unexpected %A" other
+
+    Environment.SetEnvironmentVariable("AWS_REGION_DEMO", "us-west-2")
+
+    match read awsRegion with
+    | Ok(Some(StringValue r)) -> printfn "  set        -> Ok (Some \"%s\")  (env wins)" r
+    | other -> printfn "  set        -> unexpected %A" other
+
+    let badIntDef =
+        { Name = "RETRY_COUNT_DEMO"
+          Kind = Manual
+          ValueType = IntType
+          Requirement = Required
+          IsSecret = false
+          DefaultValue = Some "not-an-int"
+          Doc =
+            { Description = "Retry count with malformed default"
+              HowToFind = "Demonstrates Error on bad default"
+              ManagementUrl = None } }
+
+    Environment.SetEnvironmentVariable("RETRY_COUNT_DEMO", null)
+
+    match read badIntDef with
+    | Error msg -> printfn "  bad default -> Error \"%s\"" msg
+    | Ok v -> printfn "  bad default -> unexpectedly Ok %A" v
+
+    Environment.SetEnvironmentVariable("AWS_REGION_DEMO", null)
+    printfn ""
+
+// =============================================================================
 // Run all demos
 // =============================================================================
 
@@ -979,6 +1047,7 @@ let main _argv =
     demoWriteEnvFile ()
     demoReadResult ()
     demoExternalKind ()
+    demoDefaultValue ()
 
     printfn "Done!"
     0
