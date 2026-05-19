@@ -132,6 +132,31 @@ let errors = validateRequired allDefs
 ```
 <!-- sync:validation:end -->
 
+<!-- sync:defaults:start -->
+## Static Defaults
+
+`ConfigVarDef.DefaultValue` is a fallback raw string applied by `Reader.read`
+when the environment variable is missing or whitespace-only. A set env var
+always wins; the default is parsed through `ValueType`, so a malformed default
+surfaces as a parse `Error`.
+
+```fsharp
+| AwsRegion ->
+    { Name = "AWS_REGION"
+      Kind = Manual
+      ValueType = StringType
+      Requirement = Required
+      IsSecret = false
+      DefaultValue = Some "eu-central-1"  // used when AWS_REGION is unset
+      Doc = { Description = "AWS region"
+              HowToFind = "Defaults to eu-central-1 if not set"
+              ManagementUrl = None } }
+```
+
+Set `DefaultValue = None` to keep the existing "missing Required → Error"
+semantics.
+<!-- sync:defaults:end -->
+
 <!-- sync:external:start -->
 ## External (Runtime-Only) Vars
 
@@ -281,7 +306,8 @@ type ConfigValueType = StringType | IntType | BoolType | FloatType
 type ConfigRequirement = Required | Optional
 type ConfigVarDef = {
     Name: string; Kind: ConfigVarKind; ValueType: ConfigValueType
-    Requirement: ConfigRequirement; IsSecret: bool; Doc: ConfigVarDoc }
+    Requirement: ConfigRequirement; IsSecret: bool
+    DefaultValue: string option; Doc: ConfigVarDoc }
 type ConfigValue = StringValue of string | IntValue of int | BoolValue of bool | FloatValue of float
 ```
 <!-- sync:types:end -->

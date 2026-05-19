@@ -89,12 +89,24 @@ type ConfigVarDoc =
 /// Core definition of a config variable (enough to read, parse, validate)
 [<NoComparison; NoEquality>]
 type ConfigVarDef =
-    { Name: string
-      Kind: ConfigVarKind
-      ValueType: ConfigValueType
-      Requirement: ConfigRequirement
-      IsSecret: bool
-      Doc: ConfigVarDoc }
+    {
+        Name: string
+        Kind: ConfigVarKind
+        ValueType: ConfigValueType
+        Requirement: ConfigRequirement
+        IsSecret: bool
+        /// Fallback raw string used by `Reader.read` when the environment variable is
+        /// missing or empty. Production callers can declare a sensible default (e.g.
+        /// `AWS_REGION = "eu-central-1"`) so the app does not throw on a missed Required
+        /// var when a reasonable static value exists. `None` preserves the existing
+        /// "missing Required → Error" semantics.
+        ///
+        /// The default is passed through `parseValue`, so it must satisfy the var's
+        /// `ValueType` (e.g. a `BoolType` default must parse as `true`/`false`/`1`/`0`).
+        /// Set vars always win over the default — defaults only apply on miss.
+        DefaultValue: string option
+        Doc: ConfigVarDoc
+    }
 
 // =============================================================================
 // Parsing Utilities

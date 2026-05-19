@@ -12,6 +12,19 @@ let private makeDef name requirement valueType =
       ValueType = valueType
       Requirement = requirement
       IsSecret = false
+      DefaultValue = None
+      Doc =
+        { Description = "test"
+          HowToFind = "test"
+          ManagementUrl = None } }
+
+let private makeDefWithDefault name requirement valueType defaultValue =
+    { Name = name
+      Kind = Manual
+      ValueType = valueType
+      Requirement = requirement
+      IsSecret = false
+      DefaultValue = Some defaultValue
       Doc =
         { Description = "test"
           HowToFind = "test"
@@ -215,6 +228,76 @@ module ReadTests =
             | Ok _ -> failwith "Expected Error"
         finally
             Environment.SetEnvironmentVariable("TEST_ERR_MSG_EMPTY", null)
+
+    [<Fact>]
+    let ``read returns DefaultValue when required env var is unset`` () =
+        let def =
+            makeDefWithDefault "TEST_DEFAULT_REQ_UNSET" Required StringType "eu-central-1"
+
+        Environment.SetEnvironmentVariable("TEST_DEFAULT_REQ_UNSET", null)
+
+        match read def with
+        | Ok(Some(StringValue s)) -> test <@ s = "eu-central-1" @>
+        | other -> failwithf "Expected Ok(Some(StringValue \"eu-central-1\")), got %A" other
+
+    [<Fact>]
+    let ``read returns env value (not DefaultValue) when env var is set`` () =
+        let def =
+            makeDefWithDefault "TEST_DEFAULT_REQ_SET" Required StringType "eu-central-1"
+
+        Environment.SetEnvironmentVariable("TEST_DEFAULT_REQ_SET", "us-east-1")
+
+        try
+            match read def with
+            | Ok(Some(StringValue s)) -> test <@ s = "us-east-1" @>
+            | other -> failwithf "Expected Ok(Some(StringValue \"us-east-1\")), got %A" other
+        finally
+            Environment.SetEnvironmentVariable("TEST_DEFAULT_REQ_SET", null)
+
+    [<Fact>]
+    let ``read fails when DefaultValue is None and required env var is unset`` () =
+        // Regression: prior behavior — Required+missing+no default → Error.
+        let def = makeDef "TEST_DEFAULT_NONE_UNSET" Required StringType
+        Environment.SetEnvironmentVariable("TEST_DEFAULT_NONE_UNSET", null)
+        test <@ Result.isError (read def) @>
+
+    [<Fact>]
+    let ``read returns DefaultValue when required env var is whitespace`` () =
+        let def =
+            makeDefWithDefault "TEST_DEFAULT_REQ_WS" Required StringType "eu-central-1"
+
+        Environment.SetEnvironmentVariable("TEST_DEFAULT_REQ_WS", "   ")
+
+        try
+            match read def with
+            | Ok(Some(StringValue s)) -> test <@ s = "eu-central-1" @>
+            | other -> failwithf "Expected Ok(Some(StringValue \"eu-central-1\")), got %A" other
+        finally
+            Environment.SetEnvironmentVariable("TEST_DEFAULT_REQ_WS", null)
+
+    [<Fact>]
+    let ``read returns Some DefaultValue for optional var when env unset`` () =
+        let def = makeDefWithDefault "TEST_DEFAULT_OPT_UNSET" Optional StringType "fallback"
+        Environment.SetEnvironmentVariable("TEST_DEFAULT_OPT_UNSET", null)
+
+        match read def with
+        | Ok(Some(StringValue s)) -> test <@ s = "fallback" @>
+        | other -> failwithf "Expected Ok(Some(StringValue \"fallback\")), got %A" other
+
+    [<Fact>]
+    let ``read parses DefaultValue through ValueType (int)`` () =
+        let def = makeDefWithDefault "TEST_DEFAULT_INT" Required IntType "42"
+        Environment.SetEnvironmentVariable("TEST_DEFAULT_INT", null)
+
+        match read def with
+        | Ok(Some(IntValue i)) -> test <@ i = 42 @>
+        | other -> failwithf "Expected Ok(Some(IntValue 42)), got %A" other
+
+    [<Fact>]
+    let ``read surfaces parse error from malformed DefaultValue`` () =
+        let def = makeDefWithDefault "TEST_DEFAULT_BAD_INT" Required IntType "not-a-number"
+        Environment.SetEnvironmentVariable("TEST_DEFAULT_BAD_INT", null)
+        test <@ Result.isError (read def) @>
 
 module ConvenienceFunctionTests =
     [<Fact>]
