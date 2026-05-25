@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.3.0 - 2026-05-25
+
 - feat: add `DefaultValue: string option` field to `ConfigVarDef` — production callers can declare a static fallback (e.g. `AWS_REGION = "eu-central-1"`) so `Reader.read` returns the default when the env var is missing/whitespace instead of failing for Required vars. A set env var still wins; the default is parsed through `ValueType` so a malformed default surfaces as a parse Error. Existing call sites set `DefaultValue = None` for no behavior change.
 
 ## 0.2.0 - 2026-04-29
