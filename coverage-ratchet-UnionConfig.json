@@ -2,7 +2,7 @@
   "overrides": {
     "ConfigEditor.fs": {
       "line": 100,
-      "branch": 77.77777777777779,
+      "branch": 80,
       "reason": "compiler-generated branches in pattern matching and equality checks"
     },
     "ConfigRegistry.fs": {

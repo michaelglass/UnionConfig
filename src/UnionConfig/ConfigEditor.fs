@@ -2,6 +2,7 @@ namespace UnionConfig
 
 open System
 open System.IO
+open UnionConfig.Types
 open UnionConfig.Verification
 open UnionConfig.EnvFile
 
@@ -17,6 +18,19 @@ module ConfigEditor =
         | NoChangesNeeded
         | Applied of count: int
         | Failed of errors: string list
+
+    /// Standard `getDefaults` callback for `populateDefaults`: for every def with
+    /// a `DefaultValue` whose corresponding entry in `current` is missing or empty,
+    /// emit `(name, defaultValue)`. Curry with the def list and pass directly:
+    ///
+    ///     populateDefaults getValue setValue (defaultsFromDefs allDefs) writeLocal
+    let defaultsFromDefs (defs: ConfigVarDef seq) (current: Map<string, string>) : (string * string) array =
+        defs
+        |> Seq.choose (fun def ->
+            match def.DefaultValue with
+            | Some v when Map.tryFind def.Name current |> Option.forall String.IsNullOrEmpty -> Some(def.Name, v)
+            | _ -> None)
+        |> Array.ofSeq
 
     /// Populate defaults directly (no editor)
     /// Parameters:
