@@ -8,7 +8,7 @@
 
     <!-- Package metadata -->
     <PackageId>UnionConfig</PackageId>
-    <Version>0.4.0</Version>
+    <Version>0.4.1</Version>
     <Authors>Michael Glass</Authors>
     <Description>Type-safe configuration management using F# discriminated unions. Includes env reader, .env file operations, SSM parameter store backend, verification, and interactive text editor workflow.</Description>
     <PackageTags>fsharp;configuration;discriminated-union;env;dotenv;ssm;parameter-store;editor</PackageTags>
@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.201" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="All" />
   </ItemGroup>
 
   <!-- F# source files - ORDER MATTERS -->
