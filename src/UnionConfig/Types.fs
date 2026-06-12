@@ -3,6 +3,7 @@
 module UnionConfig.Types
 
 open System
+open System.Globalization
 
 // =============================================================================
 // Core Configuration Types (Reusable)
@@ -136,7 +137,7 @@ let parseValue (valueType: ConfigValueType) (rawValue: string) : Result<ConfigVa
         | Some b -> Ok(BoolValue b)
         | None -> Error $"Expected true/false/1/0, got '%s{rawValue}'"
     | FloatType ->
-        match Double.TryParse(rawValue) with
+        match Double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture) with
         | true, f -> Ok(FloatValue f)
         | false, _ -> Error $"Expected float, got '%s{rawValue}'"
     | CustomType(typeName, validate) ->
@@ -211,7 +212,7 @@ module ConfigValue =
         match cv with
         | Some(FloatValue f) -> f
         | Some(StringValue s) ->
-            match Double.TryParse(s) with
+            match Double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture) with
             | true, f -> f
             | false, _ -> failwithf "Cannot convert '%s' to float" s
         | Some _ -> failwith "Type mismatch: expected float"
@@ -222,7 +223,7 @@ module ConfigValue =
         match cv with
         | Some(FloatValue f) -> Some f
         | Some(StringValue s) ->
-            match Double.TryParse(s) with
+            match Double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture) with
             | true, f -> Some f
             | false, _ -> failwithf "Cannot convert '%s' to float" s
         | Some _ -> failwith "Type mismatch: expected float"
