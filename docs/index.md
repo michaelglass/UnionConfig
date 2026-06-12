@@ -242,9 +242,9 @@ let store: SsmConfigStore =
       IsSecret = fun name -> name = "API_KEY" }
 
 let value = getValue store "DATABASE_URL"      // string option
-let ok = setValue store "MAX_RETRIES" "5"       // bool
+let setResult = setValue store "MAX_RETRIES" "5" // Result<unit, string> — Error carries the store's message
 let all = loadAll store varNames               // Map<string, string>
-let results = applyChanges store changes       // (key * success * wasDelete) array
+let results = applyChanges store changes       // (key * Result<unit, string> * wasDelete) array
 ```
 <!-- sync:ssm:end -->
 
@@ -322,10 +322,10 @@ EnvFile.displayChanges        : (string * string * string) array -> unit
 
 // SsmConfigStore
 SsmConfigStore.getValue      : SsmConfigStore -> string -> string option
-SsmConfigStore.setValue      : SsmConfigStore -> string -> string -> bool
-SsmConfigStore.deleteValue   : SsmConfigStore -> string -> bool
+SsmConfigStore.setValue      : SsmConfigStore -> string -> string -> Result<unit, string>
+SsmConfigStore.deleteValue   : SsmConfigStore -> string -> Result<unit, string>
 SsmConfigStore.loadAll       : SsmConfigStore -> string array -> Map<string, string>
-SsmConfigStore.applyChanges  : SsmConfigStore -> (string * string * string) array -> (string * bool * bool) array
+SsmConfigStore.applyChanges  : SsmConfigStore -> (string * string * string) array -> (string * Result<unit, string> * bool) array
 
 // ConfigEditor
 ConfigEditor.populateDefaults : (string -> string option) -> ... -> PopulateResult
