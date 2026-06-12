@@ -142,7 +142,7 @@ module ConfigEditor =
                 displayChanges changes
 
                 printfn ""
-                section "Verifying API keys"
+                section "Verifying changes"
 
                 let updatedConfig =
                     changes
