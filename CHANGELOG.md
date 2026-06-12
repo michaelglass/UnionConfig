@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- feat!: `SsmConfigStore.setValue`, `deleteValue`, and `applyChanges` now return `Result<unit, string>` instead of `bool`, surfacing the store's error text on failure. Migrate `if setValue store name value then ...` → `match setValue store name value with Ok () -> ... | Error msg -> ...`; `applyChanges` results are now `(key, Result<unit, string>, wasDelete)` tuples.
+- fix: `Reader.read` parses floats with the invariant culture, so values like `1.5` are read consistently regardless of the host locale.
+- fix: `populateDefaults` loads the real store state before defaulting, so it no longer overwrites values that already exist in the store.
+- fix: `EnvFile.readEnvFile` strips surrounding single/double quotes when reading `.env` values, matching common `.env` quoting conventions.
+- fix: `ConfigValue` extraction mismatch errors now name the actual case received, making type-mismatch diagnostics clearer.
+- fix: `EnvFile.maskValue` fully masks short secrets instead of leaking leading/trailing characters.
+- fix: rename the editor verification section heading to "Verifying changes".
+- fix: `ConfigRegistry.enumerateAll` rejects 3-level DU nesting with a clear error message instead of failing obscurely.
+
 ## 0.4.1 - 2026-05-26
 
 - chore: dependency refresh — bump `Microsoft.SourceLink.GitHub` 10.0.201 → 10.0.300 and `Microsoft.Testing.Extensions.CodeCoverage` 18.6.2 → 18.7.0. No API changes.
