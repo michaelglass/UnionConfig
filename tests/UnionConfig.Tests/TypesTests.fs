@@ -1,8 +1,21 @@
 module UnionConfig.Tests.TypesTests
 
+open System.Globalization
+open System.Threading
 open Xunit
 open Swensen.Unquote
 open UnionConfig.Types
+
+/// Run a function with the current thread culture temporarily set to `culture`,
+/// restoring the original culture afterwards (even on exception).
+let private withCulture (culture: CultureInfo) (f: unit -> unit) =
+    let original = Thread.CurrentThread.CurrentCulture
+
+    try
+        Thread.CurrentThread.CurrentCulture <- culture
+        f ()
+    finally
+        Thread.CurrentThread.CurrentCulture <- original
 
 module ParseBoolTests =
     [<Fact>]
@@ -85,6 +98,15 @@ module ParseValueTests =
     [<Fact>]
     let ``parseValue FloatType rejects non-float`` () =
         test <@ Result.isError (parseValue FloatType "not-a-float") @>
+
+    [<Fact>]
+    let ``parseValue FloatType parses invariant decimal under de-DE culture`` () =
+        // de-DE uses ',' as decimal separator and '.' as group separator.
+        // Config values are always invariant, so "3.14" must parse to 3.14 (not 314.0).
+        withCulture (CultureInfo("de-DE")) (fun () ->
+            match parseValue FloatType "3.14" with
+            | Ok(FloatValue f) -> test <@ f = 3.14 @>
+            | other -> failwithf "Expected Ok(FloatValue 3.14), got %A" other)
 
     [<Fact>]
     let ``parseValue CustomType calls validator`` () =
@@ -213,6 +235,10 @@ module ConfigValueTests =
         test <@ ConfigValue.float (Some(StringValue "2.5")) = 2.5 @>
 
     [<Fact>]
+    let ``float parses invariant StringValue under de-DE culture`` () =
+        withCulture (CultureInfo("de-DE")) (fun () -> test <@ ConfigValue.float (Some(StringValue "2.5")) = 2.5 @>)
+
+    [<Fact>]
     let ``float fails on non-parseable StringValue`` () =
         raises<exn> <@ ConfigValue.float (Some(StringValue "abc")) @>
 
@@ -231,6 +257,11 @@ module ConfigValueTests =
     [<Fact>]
     let ``floatOption parses from StringValue`` () =
         test <@ ConfigValue.floatOption (Some(StringValue "2.5")) = Some 2.5 @>
+
+    [<Fact>]
+    let ``floatOption parses invariant StringValue under de-DE culture`` () =
+        withCulture (CultureInfo("de-DE")) (fun () ->
+            test <@ ConfigValue.floatOption (Some(StringValue "2.5")) = Some 2.5 @>)
 
     [<Fact>]
     let ``floatOption fails on non-parseable StringValue`` () =
