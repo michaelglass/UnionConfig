@@ -80,6 +80,73 @@ module ReadEnvFileTests =
         finally
             File.Delete(path)
 
+    [<Fact>]
+    let ``readEnvFile strips surrounding double quotes`` () =
+        let path = Path.GetTempFileName()
+
+        try
+            File.WriteAllText(path, "KEY=\"value\"")
+            let result = readEnvFile path
+            test <@ Map.find "KEY" result = "value" @>
+        finally
+            File.Delete(path)
+
+    [<Fact>]
+    let ``readEnvFile strips surrounding single quotes`` () =
+        let path = Path.GetTempFileName()
+
+        try
+            File.WriteAllText(path, "KEY='value'")
+            let result = readEnvFile path
+            test <@ Map.find "KEY" result = "value" @>
+        finally
+            File.Delete(path)
+
+    [<Fact>]
+    let ``readEnvFile keeps a single unmatched quote`` () =
+        let path = Path.GetTempFileName()
+
+        try
+            File.WriteAllText(path, "KEY=\"value")
+            let result = readEnvFile path
+            test <@ Map.find "KEY" result = "\"value" @>
+        finally
+            File.Delete(path)
+
+    [<Fact>]
+    let ``readEnvFile keeps mismatched outer quotes`` () =
+        let path = Path.GetTempFileName()
+
+        try
+            File.WriteAllText(path, "KEY=\"value'")
+            let result = readEnvFile path
+            test <@ Map.find "KEY" result = "\"value'" @>
+        finally
+            File.Delete(path)
+
+    [<Fact>]
+    let ``readEnvFile preserves inner quotes`` () =
+        let path = Path.GetTempFileName()
+
+        try
+            File.WriteAllText(path, "KEY=a\"b\"c")
+            let result = readEnvFile path
+            test <@ Map.find "KEY" result = "a\"b\"c" @>
+        finally
+            File.Delete(path)
+
+    [<Fact>]
+    let ``readEnvFile keeps a lone empty-pair quote as-is`` () =
+        // A single double-quote char on its own is not a matched pair.
+        let path = Path.GetTempFileName()
+
+        try
+            File.WriteAllText(path, "KEY=\"")
+            let result = readEnvFile path
+            test <@ Map.find "KEY" result = "\"" @>
+        finally
+            File.Delete(path)
+
 module CompareConfigsTests =
     [<Fact>]
     let ``compareConfigs detects new values`` () =
