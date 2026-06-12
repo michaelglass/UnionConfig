@@ -30,8 +30,24 @@ type EnvFileSection =
 let secretKeyIndicators =
     [| "PASSWORD"; "SECRET"; "KEY"; "API_KEY"; "SIGNING"; "TOKEN" |]
 
+/// Strip one matching outer pair of double or single quotes from a value.
+/// Only a genuine matched pair (length >= 2, same quote char at both ends) is
+/// removed; lone, mismatched, or inner quotes are preserved (dotenv convention).
+let private stripOuterQuotes (value: string) : string =
+    if value.Length >= 2 then
+        let first = value.[0]
+        let last = value.[value.Length - 1]
+
+        if (first = '"' || first = '\'') && first = last then
+            value.Substring(1, value.Length - 2)
+        else
+            value
+    else
+        value
+
 /// Read a .env-style configuration file into a Map
-/// Ignores comments (lines starting with #) and empty lines
+/// Ignores comments (lines starting with #) and empty lines.
+/// Strips one matching outer pair of double or single quotes from each value.
 let readEnvFile (path: string) : Map<string, string> =
     if not (File.Exists path) then
         Map.empty
@@ -50,7 +66,7 @@ let readEnvFile (path: string) : Map<string, string> =
                 | -1 -> None
                 | idx ->
                     let key = trimmed.Substring(0, idx).Trim()
-                    let value = trimmed.Substring(idx + 1).Trim()
+                    let value = trimmed.Substring(idx + 1).Trim() |> stripOuterQuotes
                     Some(key, value))
         |> Map.ofArray
 
