@@ -45,17 +45,31 @@ module ConfigEditor =
         (writeLocalFile: Map<string, string> -> unit)
         : PopulateResult =
 
-        // Load current config
-        let currentConfig =
-            getDefaults Map.empty
-            |> Array.map fst
-            |> Array.distinct
-            |> Array.append (getDefaults Map.empty |> Array.map fst)
-            |> Array.distinct
-            |> Array.map (fun name ->
-                let value = getValue name |> Option.defaultValue ""
-                (name, value))
-            |> Map.ofArray
+        // Load current config by discovering every name `getDefaults` could propose and
+        // backfilling its real store value. A state-sensitive `getDefaults` may surface
+        // new names only once earlier ones are present, so we iterate to a fixed point:
+        // load real values for the names seen so far, re-run `getDefaults`, and repeat
+        // until it stops introducing names. This guarantees every candidate's existing
+        // value is loaded before we decide what to apply, so already-set values are never
+        // clobbered. The name set is finite, so this terminates.
+        let rec loadCurrentConfig (loaded: Map<string, string>) : Map<string, string> =
+            let withRealValues =
+                getDefaults loaded
+                |> Array.map fst
+                |> Array.fold
+                    (fun cfg name ->
+                        if Map.containsKey name cfg then
+                            cfg
+                        else
+                            Map.add name (getValue name |> Option.defaultValue "") cfg)
+                    loaded
+
+            if Map.count withRealValues = Map.count loaded then
+                withRealValues
+            else
+                loadCurrentConfig withRealValues
+
+        let currentConfig = loadCurrentConfig Map.empty
 
         // Find which defaults need to be applied
         let defaultsToApply = getDefaults currentConfig

@@ -116,6 +116,40 @@ module PopulateDefaultsTests =
             test <@ errors |> List.contains "FAIL_VAR" @>
         | other -> failwithf "Expected Failed, got %A" other
 
+    [<Fact>]
+    let ``does not overwrite an already-set value with a state-sensitive getDefaults`` () =
+        // Store already has both A and B set to non-default user values.
+        let mutable store = Map.ofList [ "A", "user-a"; "B", "user-b" ]
+
+        let getValue name = Map.tryFind name store
+
+        let setValue name value =
+            store <- Map.add name value store
+            true
+
+        // State-sensitive getDefaults whose proposed set depends on the passed-in map:
+        //   * A is proposed whenever its own slot is missing/empty.
+        //   * B is proposed only once A is present AND B's slot is missing/empty.
+        // The discovery pass populateDefaults runs with Map.empty surfaces only A
+        // (B's guard fails because A is absent), so B's name is never loaded into
+        // currentConfig. The second getDefaults call — now seeing A as set — then
+        // proposes B's default, overwriting the user's existing B value.
+        let isMissing name (current: Map<string, string>) =
+            current |> Map.tryFind name |> Option.forall System.String.IsNullOrEmpty
+
+        let getDefaults (current: Map<string, string>) =
+            [| if isMissing "A" current then
+                   ("A", "a-default")
+               if not (isMissing "A" current) && isMissing "B" current then
+                   ("B", "b-default") |]
+
+        let writeLocalFile _ = ()
+
+        populateDefaults getValue setValue getDefaults writeLocalFile |> ignore
+
+        // B was already set by the user; populateDefaults must not clobber it.
+        test <@ Map.find "B" store = "user-b" @>
+
 module EditConfigWithTests =
     [<Fact>]
     let ``no changes detected when editor does not modify file`` () =
