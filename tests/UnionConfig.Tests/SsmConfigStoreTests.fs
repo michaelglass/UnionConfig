@@ -82,7 +82,7 @@ module SetValueTests =
         let mem = InMemoryStore()
         let store = createTestStore mem
         let result = setValue store "DB_HOST" "localhost"
-        test <@ result = true @>
+        test <@ result = Ok() @>
         test <@ getValue store "DB_HOST" = Some "localhost" @>
 
     [<Fact>]
@@ -116,11 +116,11 @@ module SetValueTests =
             @>
 
     [<Fact>]
-    let ``setValue returns false when operation fails`` () =
+    let ``setValue surfaces the store error text on failure`` () =
         let mem = InMemoryStore()
         mem.SetFailOnPut(true)
         let store = createTestStore mem
-        test <@ setValue store "DB_HOST" "localhost" = false @>
+        test <@ setValue store "DB_HOST" "localhost" = Error "Simulated PutParameter failure" @>
 
 module DeleteValueTests =
     [<Fact>]
@@ -128,22 +128,22 @@ module DeleteValueTests =
         let mem = InMemoryStore()
         mem.AddParameter("/myapp/staging/DB_HOST", "localhost")
         let store = createTestStore mem
-        test <@ deleteValue store "DB_HOST" = true @>
+        test <@ deleteValue store "DB_HOST" = Ok() @>
         test <@ getValue store "DB_HOST" = None @>
 
     [<Fact>]
-    let ``deleteValue returns false for nonexistent parameter`` () =
+    let ``deleteValue surfaces the store error for a nonexistent parameter`` () =
         let mem = InMemoryStore()
         let store = createTestStore mem
-        test <@ deleteValue store "NONEXISTENT" = false @>
+        test <@ deleteValue store "NONEXISTENT" = Error "ParameterNotFound: not found" @>
 
     [<Fact>]
-    let ``deleteValue returns false when operation fails`` () =
+    let ``deleteValue surfaces the store error text on failure`` () =
         let mem = InMemoryStore()
         mem.AddParameter("/myapp/staging/VAR", "value")
         mem.SetFailOnDelete(true)
         let store = createTestStore mem
-        test <@ deleteValue store "VAR" = false @>
+        test <@ deleteValue store "VAR" = Error "Simulated DeleteParameter failure" @>
 
 module LoadAllTests =
     [<Fact>]
@@ -172,7 +172,7 @@ module ApplyChangesTests =
         let store = createTestStore mem
         let changes = [| ("DB_HOST", "", "localhost") |]
         let results = applyChanges store changes
-        test <@ results.[0] = ("DB_HOST", true, false) @>
+        test <@ results.[0] = ("DB_HOST", Ok(), false) @>
         test <@ getValue store "DB_HOST" = Some "localhost" @>
 
     [<Fact>]
@@ -182,7 +182,16 @@ module ApplyChangesTests =
         let store = createTestStore mem
         let changes = [| ("DB_HOST", "localhost", "") |]
         let results = applyChanges store changes
-        test <@ results.[0] = ("DB_HOST", true, true) @>
+        test <@ results.[0] = ("DB_HOST", Ok(), true) @>
+
+    [<Fact>]
+    let ``applyChanges surfaces the store error text when a set fails`` () =
+        let mem = InMemoryStore()
+        mem.SetFailOnPut(true)
+        let store = createTestStore mem
+        let changes = [| ("DB_HOST", "", "localhost") |]
+        let results = applyChanges store changes
+        test <@ results.[0] = ("DB_HOST", Error "Simulated PutParameter failure", false) @>
 
     [<Fact>]
     let ``applyChanges does not delete when both values are empty`` () =

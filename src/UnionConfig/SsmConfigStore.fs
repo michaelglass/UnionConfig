@@ -47,17 +47,16 @@ type SsmConfigStore =
 let getValue (store: SsmConfigStore) (name: string) : string option =
     store.Operations.GetParameter(store.PathMapping.ToPath name)
 
-/// Set a single config value (auto-determines SecureString from IsSecret)
-let setValue (store: SsmConfigStore) (name: string) (value: string) : bool =
+/// Set a single config value (auto-determines SecureString from IsSecret).
+/// Returns Ok on success, Error with the store's message on failure.
+let setValue (store: SsmConfigStore) (name: string) (value: string) : Result<unit, string> =
     let isSecure = store.IsSecret name
+    store.Operations.SetParameter (store.PathMapping.ToPath name) value isSecure
 
-    match store.Operations.SetParameter (store.PathMapping.ToPath name) value isSecure with
-    | Ok() -> true
-    | Error _ -> false
-
-/// Delete a config value. Returns true on success, false on error.
-let deleteValue (store: SsmConfigStore) (name: string) : bool =
-    store.Operations.DeleteParameter(store.PathMapping.ToPath name) |> Result.isOk
+/// Delete a config value. Returns Ok on success (including when absent),
+/// Error with the store's message on failure.
+let deleteValue (store: SsmConfigStore) (name: string) : Result<unit, string> =
+    store.Operations.DeleteParameter(store.PathMapping.ToPath name)
 
 /// Load all config values for the given var names.
 /// Returns a Map with all names as keys (empty string for missing values).
@@ -71,17 +70,21 @@ let loadAll (store: SsmConfigStore) (varNames: string array) : Map<string, strin
 /// Apply a set of changes.
 /// Each change is (key, oldValue, newValue).
 /// Deletions occur when newValue is empty and oldValue was not.
-/// Returns (key, success, wasDelete) for each change.
-let applyChanges (store: SsmConfigStore) (changes: (string * string * string) array) : (string * bool * bool) array =
+/// Returns (key, result, wasDelete) for each change, where result carries the
+/// store's error text on failure.
+let applyChanges
+    (store: SsmConfigStore)
+    (changes: (string * string * string) array)
+    : (string * Result<unit, string> * bool) array =
     changes
     |> Array.map (fun (key, oldValue, newValue) ->
         let isDelete =
             String.IsNullOrEmpty(newValue) && not (String.IsNullOrEmpty(oldValue))
 
-        let success =
+        let result =
             if isDelete then
                 deleteValue store key
             else
                 setValue store key newValue
 
-        (key, success, isDelete))
+        (key, result, isDelete))
