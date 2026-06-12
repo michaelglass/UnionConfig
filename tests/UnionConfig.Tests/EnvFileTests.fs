@@ -195,9 +195,11 @@ module MaskValueTests =
         test <@ masked = "3000" @>
 
     [<Fact>]
-    let ``maskValue handles short secret values`` () =
+    let ``maskValue fully masks short secret values`` () =
+        // Deliberate: secrets of <=4 chars are fully masked so short secrets are
+        // not revealed wholesale (previously "ab" rendered as "ab").
         let masked = maskValue "PASSWORD" "ab"
-        test <@ masked = "ab" @>
+        test <@ masked = "****" @>
 
     [<Fact>]
     let ``maskValue handles empty values`` () =
@@ -230,10 +232,16 @@ module MaskValueTests =
         test <@ masked = "sign****" @>
 
     [<Fact>]
-    let ``maskValue exactly 4 char secret shows all chars`` () =
+    let ``maskValue fully masks exactly 4 char secret`` () =
+        // Deliberate: <=4 chars is fully masked (previously "abcd" was shown in full).
         let masked = maskValue "API_KEY" "abcd"
-        // 4 chars, min(4, 4) = 4 visible, 0 masked
-        test <@ masked = "abcd" @>
+        test <@ masked = "****" @>
+
+    [<Fact>]
+    let ``maskValue partially masks 5 char secret`` () =
+        // 5 chars: first 4 shown, 1 masked — boundary just above the full-mask threshold.
+        let masked = maskValue "API_KEY" "abcde"
+        test <@ masked = "abcd*" @>
 
 module DisplayChangesTests =
     [<Fact>]

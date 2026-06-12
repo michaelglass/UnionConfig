@@ -88,17 +88,20 @@ let compareConfigs (before: Map<string, string>) (after: Map<string, string>) : 
         else
             None)
 
-/// Mask sensitive values for display (shows first 4 chars, rest as asterisks)
+/// Mask sensitive values for display.
+/// Secrets of 4 chars or fewer are fully masked as "****" so short secrets are
+/// not revealed wholesale; longer secrets show their first 4 chars with the rest
+/// replaced by asterisks. Non-secret or empty values are returned unchanged.
 let maskValue (key: string) (value: string) : string =
     let isSecret =
         secretKeyIndicators
         |> Array.exists (fun s -> key.ToUpperInvariant().Contains(s))
 
     if isSecret && value.Length > 0 then
-        let visibleChars = min 4 value.Length
-
-        value.Substring(0, visibleChars)
-        + String.replicate (value.Length - visibleChars) "*"
+        if value.Length <= 4 then
+            "****"
+        else
+            value.Substring(0, 4) + String.replicate (value.Length - 4) "*"
     else
         value
 
