@@ -619,29 +619,37 @@ let demoSsmConfigStore () =
     let result = getValue store "DATABASE_URL"
     printfn "  getValue (before set): %A" result
 
-    // setValue: set a config value (auto-detects SecureString)
+    // setValue: set a config value (auto-detects SecureString).
+    // Returns Result<unit, string> so the store's error text is surfaced.
     let setResult = setValue store "DATABASE_URL" "postgresql://localhost/myapp"
-    printfn "  setValue:              %b" setResult
+    printfn "  setValue:              %A" setResult
 
     let result2 = getValue store "DATABASE_URL"
     printfn "  getValue (after set):  %A" result2
 
-    // deleteValue: delete a config value
+    // deleteValue: delete a config value (Result<unit, string>)
     let delResult = deleteValue store "DATABASE_URL"
-    printfn "  deleteValue:           %b" delResult
+    printfn "  deleteValue:           %A" delResult
 
     // loadAll: load all config values for given var names
     let loaded = loadAll store varNames
     printfn "  loadAll:               %d entries" loaded.Count
 
-    // applyChanges: apply a set of changes (sets and deletes)
+    // applyChanges: apply a set of changes (sets and deletes).
+    // Each result carries the store's error text on failure.
     let changes = [| ("MAX_RETRIES", "", "5"); ("LOG_LEVEL", "", "info") |]
     let results = applyChanges store changes
     printfn "  applyChanges:          %d results" results.Length
 
-    for (key, success, wasDelete) in results do
+    for (key, result, wasDelete) in results do
         let op = if wasDelete then "delete" else "set"
-        printfn "    %s (%s): %b" key op success
+
+        let outcome =
+            match result with
+            | Ok() -> "ok"
+            | Error msg -> $"error: %s{msg}"
+
+        printfn "    %s (%s): %s" key op outcome
 
     printfn ""
 
