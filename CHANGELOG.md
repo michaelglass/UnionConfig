@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0 - 2026-06-12
+
 - feat!: `SsmConfigStore.setValue`, `deleteValue`, and `applyChanges` now return `Result<unit, string>` instead of `bool`, surfacing the store's error text on failure. Migrate `if setValue store name value then ...` → `match setValue store name value with Ok () -> ... | Error msg -> ...`; `applyChanges` results are now `(key, Result<unit, string>, wasDelete)` tuples.
 - fix: `Reader.read` parses floats with the invariant culture, so values like `1.5` are read consistently regardless of the host locale.
 - fix: `populateDefaults` loads the real store state before defaulting, so it no longer overwrites values that already exist in the store.
