@@ -181,6 +181,14 @@ module ConfigValueTests =
         raises<exn> <@ ConfigValue.int (Some(BoolValue true)) @>
 
     [<Fact>]
+    let ``int type-mismatch message names expected and actual cases`` () =
+        let ex =
+            Assert.Throws<exn>(fun () -> ConfigValue.int (Some(BoolValue true)) |> ignore)
+
+        test <@ ex.Message.Contains("expected IntValue") @>
+        test <@ ex.Message.Contains("got BoolValue") @>
+
+    [<Fact>]
     let ``int fails on None`` () = raises<exn> <@ ConfigValue.int None @>
 
     [<Fact>]
@@ -210,6 +218,26 @@ module ConfigValueTests =
     [<Fact>]
     let ``bool fails on type mismatch`` () =
         raises<exn> <@ ConfigValue.bool (Some(StringValue "true")) @>
+
+    [<Fact>]
+    let ``bool type-mismatch message names expected and actual cases`` () =
+        let ex =
+            Assert.Throws<exn>(fun () -> ConfigValue.bool (Some(StringValue "true")) |> ignore)
+
+        test <@ ex.Message.Contains("expected BoolValue") @>
+        test <@ ex.Message.Contains("got StringValue") @>
+
+    [<Fact>]
+    let ``bool type-mismatch message names IntValue as actual case`` () =
+        let ex = Assert.Throws<exn>(fun () -> ConfigValue.bool (Some(IntValue 1)) |> ignore)
+        test <@ ex.Message.Contains("got IntValue") @>
+
+    [<Fact>]
+    let ``bool type-mismatch message names FloatValue as actual case`` () =
+        let ex =
+            Assert.Throws<exn>(fun () -> ConfigValue.bool (Some(FloatValue 1.0)) |> ignore)
+
+        test <@ ex.Message.Contains("got FloatValue") @>
 
     [<Fact>]
     let ``bool fails on None`` () = raises<exn> <@ ConfigValue.bool None @>
@@ -245,6 +273,14 @@ module ConfigValueTests =
     [<Fact>]
     let ``float fails on type mismatch`` () =
         raises<exn> <@ ConfigValue.float (Some(BoolValue true)) @>
+
+    [<Fact>]
+    let ``float type-mismatch message names expected and actual cases`` () =
+        let ex =
+            Assert.Throws<exn>(fun () -> ConfigValue.float (Some(BoolValue true)) |> ignore)
+
+        test <@ ex.Message.Contains("expected FloatValue") @>
+        test <@ ex.Message.Contains("got BoolValue") @>
 
     [<Fact>]
     let ``float fails on None`` () =

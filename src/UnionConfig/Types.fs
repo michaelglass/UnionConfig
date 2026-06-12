@@ -162,6 +162,14 @@ module ConfigValue =
         | BoolValue b -> if b then "true" else "false"
         | FloatValue f -> string<float> f
 
+    /// Name of the ConfigValue case actually received, for mismatch messages.
+    let private caseName =
+        function
+        | StringValue _ -> "StringValue"
+        | IntValue _ -> "IntValue"
+        | BoolValue _ -> "BoolValue"
+        | FloatValue _ -> "FloatValue"
+
     /// Extract string from Required config (converts any type to string)
     let string (cv: ConfigValue option) : string =
         match cv with
@@ -179,7 +187,7 @@ module ConfigValue =
             match Int32.TryParse(s) with
             | true, i -> i
             | false, _ -> failwithf "Cannot convert '%s' to int" s
-        | Some _ -> failwith "Type mismatch: expected int"
+        | Some other -> failwithf "Type mismatch: expected IntValue, got %s" (caseName other)
         | None -> failwith "Configuration value is None for required var"
 
     /// Extract int from Optional config
@@ -190,21 +198,21 @@ module ConfigValue =
             match Int32.TryParse(s) with
             | true, i -> Some i
             | false, _ -> failwithf "Cannot convert '%s' to int" s
-        | Some _ -> failwith "Type mismatch: expected int"
+        | Some other -> failwithf "Type mismatch: expected IntValue, got %s" (caseName other)
         | None -> None
 
     /// Extract bool from Required config
     let bool (cv: ConfigValue option) : bool =
         match cv with
         | Some(BoolValue b) -> b
-        | Some _ -> failwith "Type mismatch: expected bool"
+        | Some other -> failwithf "Type mismatch: expected BoolValue, got %s" (caseName other)
         | None -> failwith "Configuration value is None for required var"
 
     /// Extract bool from Optional config
     let boolOption (cv: ConfigValue option) : bool option =
         match cv with
         | Some(BoolValue b) -> Some b
-        | Some _ -> failwith "Type mismatch: expected bool"
+        | Some other -> failwithf "Type mismatch: expected BoolValue, got %s" (caseName other)
         | None -> None
 
     /// Extract float from Required config
@@ -215,7 +223,7 @@ module ConfigValue =
             match Double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture) with
             | true, f -> f
             | false, _ -> failwithf "Cannot convert '%s' to float" s
-        | Some _ -> failwith "Type mismatch: expected float"
+        | Some other -> failwithf "Type mismatch: expected FloatValue, got %s" (caseName other)
         | None -> failwith "Configuration value is None for required var"
 
     /// Extract float from Optional config
@@ -226,7 +234,7 @@ module ConfigValue =
             match Double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture) with
             | true, f -> Some f
             | false, _ -> failwithf "Cannot convert '%s' to float" s
-        | Some _ -> failwith "Type mismatch: expected float"
+        | Some other -> failwithf "Type mismatch: expected FloatValue, got %s" (caseName other)
         | None -> None
 
     /// Parse custom type from Required config using provided parser
