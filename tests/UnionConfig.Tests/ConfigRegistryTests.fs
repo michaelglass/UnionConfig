@@ -225,3 +225,56 @@ module ErrorCasesTests =
 
         let ex = Assert.Throws<exn>(fun () -> allDefs dummyStringDef |> ignore)
         test <@ ex.Message.Contains("not a discriminated union") @>
+
+    // 3-level nesting: Top -> Middle (single DU field) -> Leaf (fieldless).
+    // enumerateAll only descends two levels, so the third level must be rejected
+    // with a clear depth-limit message rather than silently skipped or mislabelled.
+    type Leaf3 =
+        | LeafA
+        | LeafB
+
+    type Middle3 = Middle of Leaf3
+
+    type Top3 = Top of Middle3
+
+    let private top3Def (_: Top3) : ConfigVarDef =
+        { Name = "DUMMY"
+          Kind = Manual
+          ValueType = StringType
+          Requirement = Required
+          IsSecret = false
+          DefaultValue = None
+          Doc =
+            { Description = "dummy"
+              HowToFind = ""
+              ManagementUrl = None } }
+
+    [<Fact>]
+    let ``allDefs throws a clear depth-limit error for 3-level nested DU`` () =
+        let ex = Assert.Throws<exn>(fun () -> allDefs top3Def |> ignore)
+        test <@ ex.Message.Contains("nesting") @>
+
+    // Inner case carrying multiple fields — distinct from both the single-DU-field
+    // depth-limit shape and the single-non-DU-field "has fields" shape.
+    type MultiFieldInner =
+        | OkLeaf
+        | BadMulti of string * int
+
+    type WrapMultiField = WrapMulti of MultiFieldInner
+
+    let private wrapMultiDef (_: WrapMultiField) : ConfigVarDef =
+        { Name = "DUMMY"
+          Kind = Manual
+          ValueType = StringType
+          Requirement = Required
+          IsSecret = false
+          DefaultValue = None
+          Doc =
+            { Description = "dummy"
+              HowToFind = ""
+              ManagementUrl = None } }
+
+    [<Fact>]
+    let ``allDefs throws has-fields error for inner case with multiple fields`` () =
+        let ex = Assert.Throws<exn>(fun () -> allDefs wrapMultiDef |> ignore)
+        test <@ ex.Message.Contains("has fields") @>

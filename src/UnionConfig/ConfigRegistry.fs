@@ -32,6 +32,14 @@ let private enumerateAll<'T> () : 'T array =
                    if innerFields.Length = 0 then
                        let innerValue = FSharpValue.MakeUnion(innerCase, [||])
                        yield FSharpValue.MakeUnion(case, [| innerValue |]) :?> 'T
+                   elif innerFields.Length = 1 && FSharpType.IsUnion(innerFields.[0].PropertyType) then
+                       // Third level of nesting: the inner case wraps a further DU.
+                       // enumerateAll only descends two levels, so reject this with a
+                       // depth-limit message rather than the generic "has fields" one.
+                       failwithf
+                           "Nested DU case '%s.%s' nests another DU — only two levels of nesting are supported"
+                           case.Name
+                           innerCase.Name
                    else
                        failwithf
                            "Nested DU case '%s.%s' has fields — only fieldless leaf cases are supported"
