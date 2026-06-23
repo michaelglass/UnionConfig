@@ -6,16 +6,17 @@ open UnionConfig.Types
 
 /// Read a config var from environment, parse to typed value.
 /// Returns Result for composable error handling:
-/// - Required missing/empty → Error with message (or `DefaultValue` if set)
+/// - Required missing/empty → Error with message (or the `Default` runtime fallback if set)
 /// - Required invalid → Error with parse message
-/// - Optional missing/empty → Ok None (or `DefaultValue` if set)
+/// - Optional missing/empty → Ok None (or the `Default` runtime fallback if set)
 /// - Optional invalid → Error with parse message
 /// - Valid → Ok (Some value)
 ///
-/// `DefaultValue` only applies when the environment variable is missing or
-/// whitespace-only. A set env var always wins. The default itself is parsed
-/// through `parseValue`, so a malformed default surfaces as a parse Error.
-let read (def: ConfigVarDef) : Result<ConfigValue option, string> =
+/// Only the runtime-fallback part of `Default` (`RuntimeFallback` / `SeedAndFallback`)
+/// applies here, and only when the environment variable is missing or whitespace-only.
+/// A set env var always wins. The fallback itself is parsed through `parseValue`, so a
+/// malformed default surfaces as a parse Error.
+let read (def: ConfigVarDef<'FetchSource>) : Result<ConfigValue option, string> =
     // fsharplint:disable-next-line Hints
     let rawValue = Environment.GetEnvironmentVariable(def.Name) |> Option.ofObj
 
@@ -24,10 +25,10 @@ let read (def: ConfigVarDef) : Result<ConfigValue option, string> =
         | None -> true
         | Some v -> String.IsNullOrWhiteSpace v
 
-    // When no default is configured, keep the raw value so the match below can still
-    // distinguish "required but not set" from "required but empty".
+    // When no runtime fallback is configured, keep the raw value so the match below can
+    // still distinguish "required but not set" from "required but empty".
     let effective =
-        match def.DefaultValue with
+        match Default.runtimeFallback def.Default with
         | Some d when isAbsent -> Some d
         | _ -> rawValue
 
@@ -52,26 +53,26 @@ let private unwrap (result: Result<ConfigValue option, string>) : ConfigValue op
     | Error msg -> failwithf "Configuration error: %s" msg
 
 /// Read string config var - returns empty string if not set
-let readString (def: ConfigVarDef) =
+let readString (def: ConfigVarDef<'FetchSource>) =
     read def |> unwrap |> ConfigValue.stringOption |> Option.defaultValue ""
 
 /// Read int config var - fails if not set or invalid
-let readInt (def: ConfigVarDef) = read def |> unwrap |> ConfigValue.int
+let readInt (def: ConfigVarDef<'FetchSource>) = read def |> unwrap |> ConfigValue.int
 
 /// Read bool config var - fails if not set or invalid
-let readBool (def: ConfigVarDef) = read def |> unwrap |> ConfigValue.bool
+let readBool (def: ConfigVarDef<'FetchSource>) = read def |> unwrap |> ConfigValue.bool
 
 /// Read int with default (for optional vars or missing values)
-let readIntOrDefault (def: ConfigVarDef) (defaultValue: int) =
+let readIntOrDefault (def: ConfigVarDef<'FetchSource>) (defaultValue: int) =
     read def |> unwrap |> ConfigValue.intOption |> Option.defaultValue defaultValue
 
 /// Read bool with default (for optional vars or missing values)
-let readBoolOrDefault (def: ConfigVarDef) (defaultValue: bool) =
+let readBoolOrDefault (def: ConfigVarDef<'FetchSource>) (defaultValue: bool) =
     read def |> unwrap |> ConfigValue.boolOption |> Option.defaultValue defaultValue
 
 /// Validate all required vars are set and have valid values.
 /// Returns a list of error messages for any missing or invalid vars.
-let validateRequired (defs: ConfigVarDef seq) : string list =
+let validateRequired (defs: ConfigVarDef<'FetchSource> seq) : string list =
     defs
     |> Seq.filter (fun d -> d.Requirement = Required)
     |> Seq.choose (fun def ->
