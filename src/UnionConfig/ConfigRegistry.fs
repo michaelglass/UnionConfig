@@ -64,11 +64,13 @@ let private getWrapperCaseName<'T> (value: 'T) : string option =
         None
 
 /// Discover all cases of a DU, map through toDef function. Returns flat array.
-let allDefs<'T> (toDef: 'T -> ConfigVarDef) : ConfigVarDef array = enumerateAll<'T> () |> Array.map toDef
+/// `'FetchSource` is inferred from `toDef`; call as `allDefs configDef`.
+let allDefs (toDef: 'T -> ConfigVarDef<'FetchSource>) : ConfigVarDef<'FetchSource> array =
+    enumerateAll<'T> () |> Array.map toDef
 
 /// Discover all cases and return (groupName, defs) pairs.
 /// Group name = wrapper case name for nested DUs, "" for flat cases.
-let allDefsGrouped<'T> (toDef: 'T -> ConfigVarDef) : (string * ConfigVarDef array) array =
+let allDefsGrouped (toDef: 'T -> ConfigVarDef<'FetchSource>) : (string * ConfigVarDef<'FetchSource> array) array =
     let allValues = enumerateAll<'T> ()
 
     allValues
@@ -79,8 +81,8 @@ let allDefsGrouped<'T> (toDef: 'T -> ConfigVarDef) : (string * ConfigVarDef arra
     |> Array.map (fun (groupName, values) -> (groupName, values |> Array.map toDef))
 
 /// Build a name-to-def lookup map.
-let byName (defs: ConfigVarDef array) : Map<string, ConfigVarDef> =
+let byName (defs: ConfigVarDef<'FetchSource> array) : Map<string, ConfigVarDef<'FetchSource>> =
     defs |> Array.map (fun d -> d.Name, d) |> Map.ofArray
 
 /// Extract all var names from defs.
-let names (defs: ConfigVarDef array) : string array = defs |> Array.map (fun d -> d.Name)
+let names (defs: ConfigVarDef<'FetchSource> array) : string array = defs |> Array.map (fun d -> d.Name)

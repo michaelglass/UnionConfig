@@ -28,7 +28,7 @@ type UnsupportedConfig =
     | ValidCase
     | BadCase of string
 
-let private simpleToDef (v: SimpleConfig) : ConfigVarDef =
+let private simpleToDef (v: SimpleConfig) : ConfigVarDef<unit> =
     let name =
         match v with
         | DB_HOST -> "DB_HOST"
@@ -36,18 +36,18 @@ let private simpleToDef (v: SimpleConfig) : ConfigVarDef =
         | API_KEY -> "API_KEY"
 
     { Name = name
-      Kind = Manual
+      Provenance = Operator
       ValueType = StringType
       Requirement = Required
       IsSecret = (v = API_KEY)
-      DefaultValue = None
+      Default = NoDefault
 
       Doc =
         { Description = $"Simple config var %s{name}"
           HowToFind = "env"
           ManagementUrl = None } }
 
-let private nestedToDef (v: NestedConfig) : ConfigVarDef =
+let private nestedToDef (v: NestedConfig) : ConfigVarDef<unit> =
     let name, isSecret =
         match v with
         | Database DBHOST -> "DBHOST", false
@@ -56,24 +56,24 @@ let private nestedToDef (v: NestedConfig) : ConfigVarDef =
         | Email SMTP_PORT -> "SMTP_PORT", false
 
     { Name = name
-      Kind = Manual
+      Provenance = Operator
       ValueType = StringType
       Requirement = Required
       IsSecret = isSecret
-      DefaultValue = None
+      Default = NoDefault
 
       Doc =
         { Description = $"Nested config var %s{name}"
           HowToFind = "env"
           ManagementUrl = None } }
 
-let private dummyToDef (_: UnsupportedConfig) : ConfigVarDef =
+let private dummyToDef (_: UnsupportedConfig) : ConfigVarDef<unit> =
     { Name = "DUMMY"
-      Kind = Manual
+      Provenance = Operator
       ValueType = StringType
       Requirement = Required
       IsSecret = false
-      DefaultValue = None
+      Default = NoDefault
 
       Doc =
         { Description = "dummy"
@@ -101,7 +101,7 @@ module AllDefsTests =
         let apiKeyDef = defs |> Array.find (fun d -> d.Name = "API_KEY")
         test <@ apiKeyDef.IsSecret = true @>
         test <@ apiKeyDef.Requirement = Required @>
-        test <@ apiKeyDef.Kind = Manual @>
+        test <@ apiKeyDef.Provenance = Operator @>
 
     [<Fact>]
     let ``allDefs throws for DU cases with unsupported payload`` () = raises<exn> <@ allDefs dummyToDef @>
@@ -138,7 +138,7 @@ module AllDefsGroupedTests =
         let grouped = allDefsGrouped nestedToDef
         let emailGroup = grouped |> Array.find (fun (name, _) -> name = "Email")
         let smtpHostDef = snd emailGroup |> Array.find (fun d -> d.Name = "SMTP_HOST")
-        test <@ smtpHostDef.Kind = Manual @>
+        test <@ smtpHostDef.Provenance = Operator @>
         test <@ smtpHostDef.Requirement = Required @>
         test <@ smtpHostDef.IsSecret = false @>
 
@@ -172,13 +172,13 @@ module ErrorCasesTests =
 
     type NestedWithPayloadInner = Wrapper of InnerWithPayload
 
-    let private dummyDef (_: NestedWithPayloadInner) : ConfigVarDef =
+    let private dummyDef (_: NestedWithPayloadInner) : ConfigVarDef<unit> =
         { Name = "DUMMY"
-          Kind = Manual
+          Provenance = Operator
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          DefaultValue = None
+          Default = NoDefault
           Doc =
             { Description = "dummy"
               HowToFind = ""
@@ -192,13 +192,13 @@ module ErrorCasesTests =
     // Multi-field case — triggers the "unsupported payload" failwithf
     type MultiFieldConfig = TwoFields of string * int
 
-    let private multiFieldDef (_: MultiFieldConfig) : ConfigVarDef =
+    let private multiFieldDef (_: MultiFieldConfig) : ConfigVarDef<unit> =
         { Name = "DUMMY"
-          Kind = Manual
+          Provenance = Operator
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          DefaultValue = None
+          Default = NoDefault
           Doc =
             { Description = "dummy"
               HowToFind = ""
@@ -211,13 +211,13 @@ module ErrorCasesTests =
 
     [<Fact>]
     let ``allDefs throws for non-union type`` () =
-        let dummyStringDef (_: string) : ConfigVarDef =
+        let dummyStringDef (_: string) : ConfigVarDef<unit> =
             { Name = "DUMMY"
-              Kind = Manual
+              Provenance = Operator
               ValueType = StringType
               Requirement = Required
               IsSecret = false
-              DefaultValue = None
+              Default = NoDefault
               Doc =
                 { Description = "dummy"
                   HowToFind = ""
@@ -237,13 +237,13 @@ module ErrorCasesTests =
 
     type Top3 = Top of Middle3
 
-    let private top3Def (_: Top3) : ConfigVarDef =
+    let private top3Def (_: Top3) : ConfigVarDef<unit> =
         { Name = "DUMMY"
-          Kind = Manual
+          Provenance = Operator
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          DefaultValue = None
+          Default = NoDefault
           Doc =
             { Description = "dummy"
               HowToFind = ""
@@ -262,13 +262,13 @@ module ErrorCasesTests =
 
     type WrapMultiField = WrapMulti of MultiFieldInner
 
-    let private wrapMultiDef (_: WrapMultiField) : ConfigVarDef =
+    let private wrapMultiDef (_: WrapMultiField) : ConfigVarDef<unit> =
         { Name = "DUMMY"
-          Kind = Manual
+          Provenance = Operator
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          DefaultValue = None
+          Default = NoDefault
           Doc =
             { Description = "dummy"
               HowToFind = ""

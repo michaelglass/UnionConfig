@@ -369,7 +369,7 @@ module WriteEnvFileTests =
                   "# MISSING CONFIG — fill these in first"
                   "# ════════════════════════════════════════════════════════════════"
                   "#"
-                  "# [Manual] DB_HOST — The database host"
+                  "# [Operator] DB_HOST — The database host"
                   "" ]
 
             let sections =
@@ -383,7 +383,7 @@ module WriteEnvFileTests =
             let lines = File.ReadAllLines(path)
             test <@ lines.[0] = "# ════════════════════════════════════════════════════════════════" @>
             test <@ lines.[1] = "# MISSING CONFIG — fill these in first" @>
-            test <@ lines.[4] = "# [Manual] DB_HOST — The database host" @>
+            test <@ lines.[4] = "# [Operator] DB_HOST — The database host" @>
             test <@ lines.[5] = "" @>
             test <@ lines.[6] = "# === Database ===" @>
         finally
@@ -410,13 +410,16 @@ module WriteEnvFileTests =
             File.Delete(path)
 
 module MissingEntriesHeaderTests =
-    let mkDef name kind requirement description =
+    /// Concrete fetch source for the `Provisioned (Fetched …)` tag test.
+    type Src = StackOutput of string
+
+    let mkDef name (provenance: Provenance<Src>) requirement description : ConfigVarDef<Src> =
         { Name = name
-          Kind = kind
+          Provenance = provenance
           ValueType = StringType
           Requirement = requirement
           IsSecret = false
-          DefaultValue = None
+          Default = NoDefault
           Doc =
             { Description = description
               HowToFind = ""
@@ -424,32 +427,32 @@ module MissingEntriesHeaderTests =
 
     [<Fact>]
     let ``missingEntriesHeader returns empty list when all required values present`` () =
-        let defs = [| mkDef "DB_HOST" Manual Required "The database host" |]
+        let defs = [| mkDef "DB_HOST" Operator Required "The database host" |]
         let values = Map.ofList [ "DB_HOST", "localhost" ]
         test <@ missingEntriesHeader defs values |> List.isEmpty @>
 
     [<Fact>]
     let ``missingEntriesHeader returns empty list when no defs`` () =
-        test <@ missingEntriesHeader [||] Map.empty |> List.isEmpty @>
+        test <@ missingEntriesHeader ([||]: ConfigVarDef<Src> array) Map.empty |> List.isEmpty @>
 
     [<Fact>]
     let ``missingEntriesHeader lists required entries with empty values`` () =
-        let defs = [| mkDef "DB_HOST" Manual Required "The database host" |]
+        let defs = [| mkDef "DB_HOST" Operator Required "The database host" |]
         let values = Map.empty
         let header = missingEntriesHeader defs values
         test <@ header |> List.exists (fun l -> l.Contains("DB_HOST")) @>
         test <@ header |> List.exists (fun l -> l.Contains("MISSING CONFIG")) @>
 
     [<Fact>]
-    let ``missingEntriesHeader includes kind tag`` () =
-        let defs = [| mkDef "API_KEY" Manual Required "API key for service" |]
+    let ``missingEntriesHeader includes provenance tag`` () =
+        let defs = [| mkDef "API_KEY" Operator Required "API key for service" |]
         let values = Map.empty
         let header = missingEntriesHeader defs values
-        test <@ header |> List.exists (fun l -> l.Contains("[Manual]")) @>
+        test <@ header |> List.exists (fun l -> l.Contains("[Operator]")) @>
 
     [<Fact>]
     let ``missingEntriesHeader includes description`` () =
-        let defs = [| mkDef "API_KEY" Manual Required "API key for service" |]
+        let defs = [| mkDef "API_KEY" Operator Required "API key for service" |]
         let values = Map.empty
         let header = missingEntriesHeader defs values
         test <@ header |> List.exists (fun l -> l.Contains("API key for service")) @>
@@ -457,8 +460,8 @@ module MissingEntriesHeaderTests =
     [<Fact>]
     let ``missingEntriesHeader skips optional entries`` () =
         let defs =
-            [| mkDef "REQUIRED_VAR" Manual Required "Must have"
-               mkDef "OPTIONAL_VAR" Manual Optional "Nice to have" |]
+            [| mkDef "REQUIRED_VAR" Operator Required "Must have"
+               mkDef "OPTIONAL_VAR" Operator Optional "Nice to have" |]
 
         let values = Map.empty
         let header = missingEntriesHeader defs values
@@ -467,55 +470,56 @@ module MissingEntriesHeaderTests =
 
     [<Fact>]
     let ``missingEntriesHeader skips entries with empty string value`` () =
-        let defs = [| mkDef "DB_HOST" Manual Required "The database host" |]
+        let defs = [| mkDef "DB_HOST" Operator Required "The database host" |]
         let values = Map.ofList [ "DB_HOST", "" ]
         let header = missingEntriesHeader defs values
         test <@ header |> List.exists (fun l -> l.Contains("DB_HOST")) @>
 
     [<Fact>]
-    let ``missingEntriesHeader shows Infrastructure kind`` () =
-        let defs = [| mkDef "VPC_ID" Infrastructure Required "VPC identifier" |]
+    let ``missingEntriesHeader shows SystemGenerated tag`` () =
+        let defs = [| mkDef "SESSION_SECRET" SystemGenerated Required "Session secret" |]
         let values = Map.empty
         let header = missingEntriesHeader defs values
-        test <@ header |> List.exists (fun l -> l.Contains("[Infrastructure]")) @>
+        test <@ header |> List.exists (fun l -> l.Contains("[SystemGenerated]")) @>
 
     [<Fact>]
-    let ``missingEntriesHeader shows AutoGenerated kind`` () =
-        let defs = [| mkDef "SESSION_SECRET" AutoGenerated Required "Session secret" |]
-
+    let ``missingEntriesHeader shows Provisioned(Cached) tag`` () =
+        let defs = [| mkDef "STRIPE_KEY" (Provisioned Cached) Required "Stripe API key" |]
         let values = Map.empty
         let header = missingEntriesHeader defs values
-        test <@ header |> List.exists (fun l -> l.Contains("[AutoGenerated]")) @>
-
-    [<Fact>]
-    let ``missingEntriesHeader shows AutoProvisioned kind`` () =
-        let defs = [| mkDef "STRIPE_KEY" AutoProvisioned Required "Stripe API key" |]
-        let values = Map.empty
-        let header = missingEntriesHeader defs values
-        test <@ header |> List.exists (fun l -> l.Contains("[AutoProvisioned]")) @>
+        test <@ header |> List.exists (fun l -> l.Contains("[Provisioned(Cached)]")) @>
 
     [<Fact>]
-    let ``missingEntriesHeader shows External kind`` () =
-        let defs = [| mkDef "DB_AUTH_TOKEN" External Required "Operator-set IAM token" |]
+    let ``missingEntriesHeader shows Provisioned(Fetched) tag`` () =
+        let defs =
+            [| mkDef "VPC_ID" (Provisioned(Fetched(StackOutput "VpcId"))) Required "VPC identifier" |]
+
         let values = Map.empty
         let header = missingEntriesHeader defs values
-        test <@ header |> List.exists (fun l -> l.Contains("[External]")) @>
+        test <@ header |> List.exists (fun l -> l.Contains("[Provisioned(Fetched)]")) @>
+
+    [<Fact>]
+    let ``missingEntriesHeader shows Ambient tag`` () =
+        let defs = [| mkDef "DB_AUTH_TOKEN" Ambient Required "Operator-set IAM token" |]
+        let values = Map.empty
+        let header = missingEntriesHeader defs values
+        test <@ header |> List.exists (fun l -> l.Contains("[Ambient]")) @>
 
     [<Fact>]
     let ``missingEntriesHeader ends with empty line`` () =
-        let defs = [| mkDef "DB_HOST" Manual Required "Host" |]
+        let defs = [| mkDef "DB_HOST" Operator Required "Host" |]
         let values = Map.empty
         let header = missingEntriesHeader defs values
         test <@ List.last header = "" @>
 
 module DefaultSectionsTests =
-    let mkDef name description =
+    let mkDef name description : ConfigVarDef<unit> =
         { Name = name
-          Kind = Manual
+          Provenance = Operator
           ValueType = StringType
           Requirement = Required
           IsSecret = false
-          DefaultValue = None
+          Default = NoDefault
           Doc =
             { Description = description
               HowToFind = ""

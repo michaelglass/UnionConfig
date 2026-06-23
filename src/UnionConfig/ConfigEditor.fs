@@ -19,15 +19,23 @@ module ConfigEditor =
         | Applied of count: int
         | Failed of errors: string list
 
-    /// Standard `getDefaults` callback for `populateDefaults`: for every def with
-    /// a `DefaultValue` whose corresponding entry in `current` is missing or empty,
-    /// emit `(name, defaultValue)`. Curry with the def list and pass directly:
+    /// Standard `getDefaults` callback for `populateDefaults`: for every *persisted* def
+    /// (a non-persisted provenance — `Ambient`, or `Provisioned (Fetched …)` — has no store
+    /// entry to seed) whose `Default` carries a seed value (`SeedOnly` / `SeedAndFallback`)
+    /// and whose corresponding entry in `current` is missing or empty, emit `(name, seed)`.
+    /// Curry with the def list and pass directly:
     ///
     ///     populateDefaults getValue setValue (defaultsFromDefs allDefs) writeLocal
-    let defaultsFromDefs (defs: ConfigVarDef seq) (current: Map<string, string>) : (string * string) array =
+    let defaultsFromDefs
+        (defs: ConfigVarDef<'FetchSource> seq)
+        (current: Map<string, string>)
+        : (string * string) array =
         defs
+        // Only persisted provenances have a store entry to seed — composing the persistence
+        // axis here makes "seed a never-persisted var" unrepresentable in the output (ADR 0049).
+        |> Seq.filter (fun def -> Provenance.isPersisted def.Provenance)
         |> Seq.choose (fun def ->
-            match def.DefaultValue with
+            match Default.seed def.Default with
             | Some v when Map.tryFind def.Name current |> Option.forall String.IsNullOrEmpty -> Some(def.Name, v)
             | _ -> None)
         |> Array.ofSeq
