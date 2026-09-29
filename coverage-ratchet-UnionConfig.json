@@ -1,24 +1,14 @@
 {
   "overrides": {
-    "ConfigEditor.fs": {
-      "line": 100,
-      "branch": 85,
-      "reason": "compiler-generated branches in pattern matching and equality checks"
-    },
     "ConfigRegistry.fs": {
       "line": 100,
-      "branch": 79,
+      "branch": 90,
       "reason": "compiler-generated branches in DU pattern matching"
     },
     "EnvFile.fs": {
       "line": 100,
-      "branch": 82.75862068965517,
+      "branch": 89,
       "reason": "I/O error-handling branches difficult to exercise in tests"
-    },
-    "SsmConfigStore.fs": {
-      "line": 100,
-      "branch": 85.71428571428571,
-      "reason": "AWS SDK async/error-handling branches difficult to exercise in tests"
     }
   }
 }
