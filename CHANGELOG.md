@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.6.0-alpha.3 - 2026-09-30
+
 - fix: the package's repository link on nuget.org points to https://github.com/michaelglass/UnionConfig (was the non-existent `union-config`) (#2)
 
 ## 0.6.0-alpha.2 - 2026-09-30
