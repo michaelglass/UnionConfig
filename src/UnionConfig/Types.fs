@@ -92,25 +92,35 @@ module Provenance =
     let behavior (provenance: Provenance<'FetchSource>) : ProvenanceBehavior<'FetchSource> =
         match provenance with
         | Operator ->
-            { IsPersisted = true
-              AllowedMutation = Edit
-              FetchSource = None }
+            {
+                IsPersisted = true
+                AllowedMutation = Edit
+                FetchSource = None
+            }
         | SystemGenerated ->
-            { IsPersisted = true
-              AllowedMutation = Rotate
-              FetchSource = None }
+            {
+                IsPersisted = true
+                AllowedMutation = Rotate
+                FetchSource = None
+            }
         | Provisioned Cached ->
-            { IsPersisted = true
-              AllowedMutation = Reprovision
-              FetchSource = None }
+            {
+                IsPersisted = true
+                AllowedMutation = Reprovision
+                FetchSource = None
+            }
         | Provisioned(Fetched source) ->
-            { IsPersisted = false
-              AllowedMutation = Reprovision
-              FetchSource = Some source }
+            {
+                IsPersisted = false
+                AllowedMutation = Reprovision
+                FetchSource = Some source
+            }
         | Ambient ->
-            { IsPersisted = false
-              AllowedMutation = NoMutation
-              FetchSource = None }
+            {
+                IsPersisted = false
+                AllowedMutation = NoMutation
+                FetchSource = None
+            }
 
     /// True when the variable's canonical value is persisted to the config store.
     /// Replaces the old `ConfigVarKind.isPersistable`: filter defs with this before
@@ -197,9 +207,11 @@ type ConfigValue =
 /// Documentation metadata for a config variable
 [<NoComparison; NoEquality>]
 type ConfigVarDoc =
-    { Description: string
-      HowToFind: string
-      ManagementUrl: Uri option }
+    {
+        Description: string
+        HowToFind: string
+        ManagementUrl: Uri option
+    }
 
 /// Core definition of a config variable (enough to read, parse, validate, and route).
 ///

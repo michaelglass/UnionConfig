@@ -19,44 +19,50 @@ type InMemoryStore() =
     member _.SetFailOnDelete(fail) = failOnDelete <- fail
 
     member _.ToOperations() : SsmOperations =
-        { GetParameter =
-            fun path ->
-                match Map.tryFind path store with
-                | Some(value, _) when not (String.IsNullOrWhiteSpace(value)) -> Some value
-                | _ -> None
-          SetParameter =
-            fun path value isSecure ->
-                if failOnPut then
-                    Error "Simulated PutParameter failure"
-                else
-                    store <- Map.add path (value, isSecure) store
-                    Ok()
-          DeleteParameter =
-            fun path ->
-                if failOnDelete then
-                    Error "Simulated DeleteParameter failure"
-                else
+        {
+            GetParameter =
+                fun path ->
                     match Map.tryFind path store with
-                    | Some _ ->
-                        store <- Map.remove path store
+                    | Some(value, _) when not (String.IsNullOrWhiteSpace(value)) -> Some value
+                    | _ -> None
+            SetParameter =
+                fun path value isSecure ->
+                    if failOnPut then
+                        Error "Simulated PutParameter failure"
+                    else
+                        store <- Map.add path (value, isSecure) store
                         Ok()
-                    | None -> Error "ParameterNotFound: not found"
-          GetParametersByPath =
-            fun prefix ->
-                store
-                |> Map.filter (fun k _ -> k.StartsWith(prefix, StringComparison.Ordinal))
-                |> Map.toList
-                |> List.map (fun (k, (v, _)) -> (k, v)) }
+            DeleteParameter =
+                fun path ->
+                    if failOnDelete then
+                        Error "Simulated DeleteParameter failure"
+                    else
+                        match Map.tryFind path store with
+                        | Some _ ->
+                            store <- Map.remove path store
+                            Ok()
+                        | None -> Error "ParameterNotFound: not found"
+            GetParametersByPath =
+                fun prefix ->
+                    store
+                    |> Map.filter (fun k _ -> k.StartsWith(prefix, StringComparison.Ordinal))
+                    |> Map.toList
+                    |> List.map (fun (k, (v, _)) -> (k, v))
+        }
 
 let private testMapping prefix =
-    { ToPath = fun name -> $"%s{prefix}/%s{name}"
-      FromPath = fun path -> path.Split('/') |> Array.last
-      PathPrefix = prefix }
+    {
+        ToPath = fun name -> $"%s{prefix}/%s{name}"
+        FromPath = fun path -> path.Split('/') |> Array.last
+        PathPrefix = prefix
+    }
 
 let private createTestStore (mem: InMemoryStore) =
-    { Operations = mem.ToOperations()
-      PathMapping = testMapping "/myapp/staging"
-      IsSecret = fun name -> name.Contains("SECRET") || name.Contains("KEY") }
+    {
+        Operations = mem.ToOperations()
+        PathMapping = testMapping "/myapp/staging"
+        IsSecret = fun name -> name.Contains("SECRET") || name.Contains("KEY")
+    }
 
 // ============================================================================
 // SsmConfigStore Tests
@@ -209,9 +215,11 @@ module ApplyChangesTests =
         let store = createTestStore mem
 
         let changes =
-            [| ("NEW_VAR", "", "new-value")
-               ("OLD_VAR", "old", "")
-               ("UPDATED", "before", "after") |]
+            [|
+                ("NEW_VAR", "", "new-value")
+                ("OLD_VAR", "old", "")
+                ("UPDATED", "before", "after")
+            |]
 
         let results = applyChanges store changes
         test <@ results.Length = 3 @>

@@ -35,17 +35,21 @@ let private simpleToDef (v: SimpleConfig) : ConfigVarDef<unit> =
         | DB_PORT -> "DB_PORT"
         | API_KEY -> "API_KEY"
 
-    { Name = name
-      Provenance = Operator
-      ValueType = StringType
-      Requirement = Required
-      IsSecret = (v = API_KEY)
-      Default = NoDefault
+    {
+        Name = name
+        Provenance = Operator
+        ValueType = StringType
+        Requirement = Required
+        IsSecret = (v = API_KEY)
+        Default = NoDefault
 
-      Doc =
-        { Description = $"Simple config var %s{name}"
-          HowToFind = "env"
-          ManagementUrl = None } }
+        Doc =
+            {
+                Description = $"Simple config var %s{name}"
+                HowToFind = "env"
+                ManagementUrl = None
+            }
+    }
 
 let private nestedToDef (v: NestedConfig) : ConfigVarDef<unit> =
     let name, isSecret =
@@ -55,30 +59,38 @@ let private nestedToDef (v: NestedConfig) : ConfigVarDef<unit> =
         | Email SMTP_HOST -> "SMTP_HOST", false
         | Email SMTP_PORT -> "SMTP_PORT", false
 
-    { Name = name
-      Provenance = Operator
-      ValueType = StringType
-      Requirement = Required
-      IsSecret = isSecret
-      Default = NoDefault
+    {
+        Name = name
+        Provenance = Operator
+        ValueType = StringType
+        Requirement = Required
+        IsSecret = isSecret
+        Default = NoDefault
 
-      Doc =
-        { Description = $"Nested config var %s{name}"
-          HowToFind = "env"
-          ManagementUrl = None } }
+        Doc =
+            {
+                Description = $"Nested config var %s{name}"
+                HowToFind = "env"
+                ManagementUrl = None
+            }
+    }
 
 let private dummyToDef (_: UnsupportedConfig) : ConfigVarDef<unit> =
-    { Name = "DUMMY"
-      Provenance = Operator
-      ValueType = StringType
-      Requirement = Required
-      IsSecret = false
-      Default = NoDefault
+    {
+        Name = "DUMMY"
+        Provenance = Operator
+        ValueType = StringType
+        Requirement = Required
+        IsSecret = false
+        Default = NoDefault
 
-      Doc =
-        { Description = "dummy"
-          HowToFind = "env"
-          ManagementUrl = None } }
+        Doc =
+            {
+                Description = "dummy"
+                HowToFind = "env"
+                ManagementUrl = None
+            }
+    }
 
 module AllDefsTests =
     [<Fact>]
@@ -173,16 +185,20 @@ module ErrorCasesTests =
     type NestedWithPayloadInner = Wrapper of InnerWithPayload
 
     let private dummyDef (_: NestedWithPayloadInner) : ConfigVarDef<unit> =
-        { Name = "DUMMY"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
-          Doc =
-            { Description = "dummy"
-              HowToFind = ""
-              ManagementUrl = None } }
+        {
+            Name = "DUMMY"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
+            Doc =
+                {
+                    Description = "dummy"
+                    HowToFind = ""
+                    ManagementUrl = None
+                }
+        }
 
     [<Fact>]
     let ``allDefs throws for nested DU with inner cases that have fields`` () =
@@ -193,16 +209,20 @@ module ErrorCasesTests =
     type MultiFieldConfig = TwoFields of string * int
 
     let private multiFieldDef (_: MultiFieldConfig) : ConfigVarDef<unit> =
-        { Name = "DUMMY"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
-          Doc =
-            { Description = "dummy"
-              HowToFind = ""
-              ManagementUrl = None } }
+        {
+            Name = "DUMMY"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
+            Doc =
+                {
+                    Description = "dummy"
+                    HowToFind = ""
+                    ManagementUrl = None
+                }
+        }
 
     [<Fact>]
     let ``allDefs throws for DU cases with multiple fields`` () =
@@ -212,16 +232,20 @@ module ErrorCasesTests =
     [<Fact>]
     let ``allDefs throws for non-union type`` () =
         let dummyStringDef (_: string) : ConfigVarDef<unit> =
-            { Name = "DUMMY"
-              Provenance = Operator
-              ValueType = StringType
-              Requirement = Required
-              IsSecret = false
-              Default = NoDefault
-              Doc =
-                { Description = "dummy"
-                  HowToFind = ""
-                  ManagementUrl = None } }
+            {
+                Name = "DUMMY"
+                Provenance = Operator
+                ValueType = StringType
+                Requirement = Required
+                IsSecret = false
+                Default = NoDefault
+                Doc =
+                    {
+                        Description = "dummy"
+                        HowToFind = ""
+                        ManagementUrl = None
+                    }
+            }
 
         let ex = Assert.Throws<exn>(fun () -> allDefs dummyStringDef |> ignore)
         test <@ ex.Message.Contains("not a discriminated union") @>
@@ -238,16 +262,20 @@ module ErrorCasesTests =
     type Top3 = Top of Middle3
 
     let private top3Def (_: Top3) : ConfigVarDef<unit> =
-        { Name = "DUMMY"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
-          Doc =
-            { Description = "dummy"
-              HowToFind = ""
-              ManagementUrl = None } }
+        {
+            Name = "DUMMY"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
+            Doc =
+                {
+                    Description = "dummy"
+                    HowToFind = ""
+                    ManagementUrl = None
+                }
+        }
 
     [<Fact>]
     let ``allDefs throws a clear depth-limit error for 3-level nested DU`` () =
@@ -263,16 +291,20 @@ module ErrorCasesTests =
     type WrapMultiField = WrapMulti of MultiFieldInner
 
     let private wrapMultiDef (_: WrapMultiField) : ConfigVarDef<unit> =
-        { Name = "DUMMY"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
-          Doc =
-            { Description = "dummy"
-              HowToFind = ""
-              ManagementUrl = None } }
+        {
+            Name = "DUMMY"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
+            Doc =
+                {
+                    Description = "dummy"
+                    HowToFind = ""
+                    ManagementUrl = None
+                }
+        }
 
     [<Fact>]
     let ``allDefs throws has-fields error for inner case with multiple fields`` () =

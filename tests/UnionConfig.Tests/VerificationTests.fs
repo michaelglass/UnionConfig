@@ -24,6 +24,8 @@ module DisplayVerificationResultsTests =
     [<Fact>]
     let ``handles mixed results without error`` () =
         displayVerificationResults
-            [| ("OK_VAR", VerifySuccess "valid")
-               ("BAD_VAR", VerifyFailed "broken")
-               ("SKIP_VAR", VerifySkipped "N/A") |]
+            [|
+                ("OK_VAR", VerifySuccess "valid")
+                ("BAD_VAR", VerifyFailed "broken")
+                ("SKIP_VAR", VerifySkipped "N/A")
+            |]

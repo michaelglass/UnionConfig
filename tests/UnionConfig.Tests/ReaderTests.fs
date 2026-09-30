@@ -7,30 +7,38 @@ open UnionConfig.Types
 open UnionConfig.Reader
 
 let private makeDef name requirement valueType : ConfigVarDef<unit> =
-    { Name = name
-      Provenance = Operator
-      ValueType = valueType
-      Requirement = requirement
-      IsSecret = false
-      Default = NoDefault
-      Doc =
-        { Description = "test"
-          HowToFind = "test"
-          ManagementUrl = None } }
+    {
+        Name = name
+        Provenance = Operator
+        ValueType = valueType
+        Requirement = requirement
+        IsSecret = false
+        Default = NoDefault
+        Doc =
+            {
+                Description = "test"
+                HowToFind = "test"
+                ManagementUrl = None
+            }
+    }
 
 // The runtime fallback under test maps to a `RuntimeFallback` default; `Reader.read`
 // only consults the runtime-fallback half of the `Default` axis.
 let private makeDefWithDefault name requirement valueType defaultValue : ConfigVarDef<unit> =
-    { Name = name
-      Provenance = Operator
-      ValueType = valueType
-      Requirement = requirement
-      IsSecret = false
-      Default = RuntimeFallback defaultValue
-      Doc =
-        { Description = "test"
-          HowToFind = "test"
-          ManagementUrl = None } }
+    {
+        Name = name
+        Provenance = Operator
+        ValueType = valueType
+        Requirement = requirement
+        IsSecret = false
+        Default = RuntimeFallback defaultValue
+        Doc =
+            {
+                Description = "test"
+                HowToFind = "test"
+                ManagementUrl = None
+            }
+    }
 
 module ReadTests =
     [<Fact>]

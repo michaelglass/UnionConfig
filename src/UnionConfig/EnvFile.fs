@@ -197,9 +197,11 @@ let defaultSections
                     else
                         Some def.Doc.Description
 
-                { Name = def.Name
-                  Value = value
-                  Comment = comment })
+                {
+                    Name = def.Name
+                    Value = value
+                    Comment = comment
+                })
 
         { Header = header; Entries = entries })
 
@@ -226,11 +228,13 @@ let missingEntriesHeader (defs: ConfigVarDef<'FetchSource> array) (values: Map<s
     if List.isEmpty missing then
         []
     else
-        [ "# ════════════════════════════════════════════════════════════════"
-          "# MISSING CONFIG — fill these in first"
-          "# ════════════════════════════════════════════════════════════════"
-          "#"
-          yield!
-              missing
-              |> List.map (fun d -> $"# [%s{formatProvenanceTag d.Provenance}] %s{d.Name} — %s{d.Doc.Description}")
-          "" ]
+        [
+            "# ════════════════════════════════════════════════════════════════"
+            "# MISSING CONFIG — fill these in first"
+            "# ════════════════════════════════════════════════════════════════"
+            "#"
+            yield!
+                missing
+                |> List.map (fun d -> $"# [%s{formatProvenanceTag d.Provenance}] %s{d.Name} — %s{d.Doc.Description}")
+            ""
+        ]
