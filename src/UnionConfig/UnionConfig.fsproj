@@ -13,7 +13,7 @@
     <Description>Type-safe configuration management using F# discriminated unions. Includes env reader, .env file operations, SSM parameter store backend, verification, and interactive text editor workflow.</Description>
     <PackageTags>fsharp;configuration;discriminated-union;env;dotenv;ssm;parameter-store;editor</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/michaelglass/union-config</RepositoryUrl>
+    <RepositoryUrl>https://github.com/michaelglass/UnionConfig</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

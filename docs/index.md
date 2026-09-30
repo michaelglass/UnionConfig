@@ -288,7 +288,7 @@ editConfig loadConfigFn setValueFn writeConfigFileFn verifyChangesFn
 
 ## Reference
 
-See the [Example App](https://github.com/michaelglass/union-config/tree/main/examples/ExampleApp) for a complete working example covering the full public API.
+See the [Example App](https://github.com/michaelglass/UnionConfig/tree/main/examples/ExampleApp) for a complete working example covering the full public API.
 
 <!-- sync:types -->
 ### Types
