@@ -42,180 +42,230 @@ type AppConfig =
 let configDef: AppConfig -> ConfigVarDef<FetchSource> =
     function
     | DatabaseUrl ->
-        { Name = "DATABASE_URL"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
+        {
+            Name = "DATABASE_URL"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
 
-          Doc =
-            { Description = "PostgreSQL connection string"
-              HowToFind = "Check your database provider dashboard"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "PostgreSQL connection string"
+                    HowToFind = "Check your database provider dashboard"
+                    ManagementUrl = None
+                }
+        }
     | DatabasePort ->
-        { Name = "DATABASE_PORT"
-          Provenance = Operator
-          ValueType = IntType
-          Requirement = Optional
-          IsSecret = false
-          // Operator-tunable, but seed a sensible default AND fall back to it at runtime.
-          Default = SeedAndFallback "5432"
+        {
+            Name = "DATABASE_PORT"
+            Provenance = Operator
+            ValueType = IntType
+            Requirement = Optional
+            IsSecret = false
+            // Operator-tunable, but seed a sensible default AND fall back to it at runtime.
+            Default = SeedAndFallback "5432"
 
-          Doc =
-            { Description = "Database port number"
-              HowToFind = "Usually 5432 for PostgreSQL"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Database port number"
+                    HowToFind = "Usually 5432 for PostgreSQL"
+                    ManagementUrl = None
+                }
+        }
     | ApiKey ->
-        { Name = "API_KEY"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = true
-          Default = NoDefault
+        {
+            Name = "API_KEY"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = true
+            Default = NoDefault
 
-          Doc =
-            { Description = "External API key for third-party service"
-              HowToFind = "Generate at https://dashboard.example.com/keys"
-              ManagementUrl = Some(Uri "https://dashboard.example.com/keys") } }
+            Doc =
+                {
+                    Description = "External API key for third-party service"
+                    HowToFind = "Generate at https://dashboard.example.com/keys"
+                    ManagementUrl = Some(Uri "https://dashboard.example.com/keys")
+                }
+        }
     | MaxRetries ->
-        { Name = "MAX_RETRIES"
-          Provenance = Operator
-          ValueType = IntType
-          Requirement = Optional
-          IsSecret = false
-          // Runtime fallback only — not seeded into a store.
-          Default = RuntimeFallback "3"
+        {
+            Name = "MAX_RETRIES"
+            Provenance = Operator
+            ValueType = IntType
+            Requirement = Optional
+            IsSecret = false
+            // Runtime fallback only — not seeded into a store.
+            Default = RuntimeFallback "3"
 
-          Doc =
-            { Description = "Maximum retry attempts for failed requests"
-              HowToFind = "Set to desired retry count (default: 3)"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Maximum retry attempts for failed requests"
+                    HowToFind = "Set to desired retry count (default: 3)"
+                    ManagementUrl = None
+                }
+        }
     | DebugMode ->
-        { Name = "DEBUG_MODE"
-          Provenance = Operator
-          ValueType = BoolType
-          Requirement = Optional
-          IsSecret = false
-          Default = RuntimeFallback "false"
+        {
+            Name = "DEBUG_MODE"
+            Provenance = Operator
+            ValueType = BoolType
+            Requirement = Optional
+            IsSecret = false
+            Default = RuntimeFallback "false"
 
-          Doc =
-            { Description = "Enable debug logging"
-              HowToFind = "Set to true or 1 to enable"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Enable debug logging"
+                    HowToFind = "Set to true or 1 to enable"
+                    ManagementUrl = None
+                }
+        }
     | LogLevel ->
-        { Name = "LOG_LEVEL"
-          Provenance = Operator
-          ValueType =
-            CustomType(
-                "LogLevel",
-                fun s ->
-                    match s.ToLowerInvariant() with
-                    | "debug"
-                    | "info"
-                    | "warn"
-                    | "error" -> None
-                    | _ -> Some "must be debug, info, warn, or error"
-            )
-          Requirement = Optional
-          IsSecret = false
-          Default = NoDefault
+        {
+            Name = "LOG_LEVEL"
+            Provenance = Operator
+            ValueType =
+                CustomType(
+                    "LogLevel",
+                    fun s ->
+                        match s.ToLowerInvariant() with
+                        | "debug"
+                        | "info"
+                        | "warn"
+                        | "error" -> None
+                        | _ -> Some "must be debug, info, warn, or error"
+                )
+            Requirement = Optional
+            IsSecret = false
+            Default = NoDefault
 
-          Doc =
-            { Description = "Application log level"
-              HowToFind = "One of: debug, info, warn, error"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Application log level"
+                    HowToFind = "One of: debug, info, warn, error"
+                    ManagementUrl = None
+                }
+        }
     | FeatureNewUi ->
-        { Name = "FEATURE_NEW_UI"
-          Provenance = Operator
-          ValueType = BoolType
-          Requirement = Optional
-          IsSecret = false
-          Default = RuntimeFallback "false"
+        {
+            Name = "FEATURE_NEW_UI"
+            Provenance = Operator
+            ValueType = BoolType
+            Requirement = Optional
+            IsSecret = false
+            Default = RuntimeFallback "false"
 
-          Doc =
-            { Description = "Feature flag: enable new UI"
-              HowToFind = "Set to true to enable the redesigned UI"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Feature flag: enable new UI"
+                    HowToFind = "Set to true to enable the redesigned UI"
+                    ManagementUrl = None
+                }
+        }
     | RequestTimeout ->
-        { Name = "REQUEST_TIMEOUT"
-          Provenance = Operator
-          ValueType = FloatType
-          Requirement = Optional
-          IsSecret = false
-          Default = RuntimeFallback "30.0"
+        {
+            Name = "REQUEST_TIMEOUT"
+            Provenance = Operator
+            ValueType = FloatType
+            Requirement = Optional
+            IsSecret = false
+            Default = RuntimeFallback "30.0"
 
-          Doc =
-            { Description = "HTTP request timeout in seconds"
-              HowToFind = "Set to desired timeout (default: 30.0)"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "HTTP request timeout in seconds"
+                    HowToFind = "Set to desired timeout (default: 30.0)"
+                    ManagementUrl = None
+                }
+        }
     | SessionSecret ->
-        { Name = "SESSION_SECRET"
-          // A secret the system mints itself; changed by rotation, never hand-edited.
-          Provenance = SystemGenerated
-          ValueType = StringType
-          Requirement = Optional
-          IsSecret = true
-          Default = NoDefault
+        {
+            Name = "SESSION_SECRET"
+            // A secret the system mints itself; changed by rotation, never hand-edited.
+            Provenance = SystemGenerated
+            ValueType = StringType
+            Requirement = Optional
+            IsSecret = true
+            Default = NoDefault
 
-          Doc =
-            { Description = "Session signing secret minted by the app"
-              HowToFind = "Generated at provisioning time; rotate to change"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Session signing secret minted by the app"
+                    HowToFind = "Generated at provisioning time; rotate to change"
+                    ManagementUrl = None
+                }
+        }
     | CacheHost ->
-        { Name = "CACHE_HOST"
-          // Re-readable infra value: fetched live from a stack output, never cached.
-          Provenance = Provisioned(Fetched(StackOutput "CacheEndpoint"))
-          ValueType = StringType
-          Requirement = Optional
-          IsSecret = false
-          Default = NoDefault
+        {
+            Name = "CACHE_HOST"
+            // Re-readable infra value: fetched live from a stack output, never cached.
+            Provenance = Provisioned(Fetched(StackOutput "CacheEndpoint"))
+            ValueType = StringType
+            Requirement = Optional
+            IsSecret = false
+            Default = NoDefault
 
-          Doc =
-            { Description = "Redis cache hostname from the infra stack output"
-              HowToFind = "Read live from the CacheEndpoint stack output"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Redis cache hostname from the infra stack output"
+                    HowToFind = "Read live from the CacheEndpoint stack output"
+                    ManagementUrl = None
+                }
+        }
     | WebhookSecret ->
-        { Name = "WEBHOOK_SECRET"
-          // Provisioned by a setup step whose source is NOT re-readable, so cache it.
-          Provenance = Provisioned Cached
-          ValueType = StringType
-          Requirement = Optional
-          IsSecret = true
-          Default = NoDefault
+        {
+            Name = "WEBHOOK_SECRET"
+            // Provisioned by a setup step whose source is NOT re-readable, so cache it.
+            Provenance = Provisioned Cached
+            ValueType = StringType
+            Requirement = Optional
+            IsSecret = true
+            Default = NoDefault
 
-          Doc =
-            { Description = "Webhook signing secret captured during service setup"
-              HowToFind = "Auto-provisioned during service setup; re-provision to change"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Webhook signing secret captured during service setup"
+                    HowToFind = "Auto-provisioned during service setup; re-provision to change"
+                    ManagementUrl = None
+                }
+        }
     | IamAuthToken ->
-        { Name = "IAM_AUTH_TOKEN"
-          // Injected by the runtime each request; read live, never persisted.
-          Provenance = Ambient
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = true
-          Default = NoDefault
+        {
+            Name = "IAM_AUTH_TOKEN"
+            // Injected by the runtime each request; read live, never persisted.
+            Provenance = Ambient
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = true
+            Default = NoDefault
 
-          Doc =
-            { Description = "Short-lived IAM auth token injected by the runtime"
-              HowToFind = "Set by the operator's shell or sidecar; not persisted to .env or SSM"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Short-lived IAM auth token injected by the runtime"
+                    HowToFind = "Set by the operator's shell or sidecar; not persisted to .env or SSM"
+                    ManagementUrl = None
+                }
+        }
 
 /// All config cases for iteration.
 let allConfigs =
-    [ DatabaseUrl
-      DatabasePort
-      ApiKey
-      MaxRetries
-      DebugMode
-      LogLevel
-      FeatureNewUi
-      RequestTimeout
-      SessionSecret
-      CacheHost
-      WebhookSecret
-      IamAuthToken ]
+    [
+        DatabaseUrl
+        DatabasePort
+        ApiKey
+        MaxRetries
+        DebugMode
+        LogLevel
+        FeatureNewUi
+        RequestTimeout
+        SessionSecret
+        CacheHost
+        WebhookSecret
+        IamAuthToken
+    ]
 
 /// All ConfigVarDefs.
 let allDefs = allConfigs |> List.map configDef
@@ -361,11 +411,13 @@ let demoParsing () =
 
     // parseValue: parse string to typed ConfigValue
     let parseExamples =
-        [ (StringType, "hello")
-          (IntType, "42")
-          (BoolType, "true")
-          (FloatType, "3.14")
-          (IntType, "not-a-number") ]
+        [
+            (StringType, "hello")
+            (IntType, "42")
+            (BoolType, "true")
+            (FloatType, "3.14")
+            (IntType, "not-a-number")
+        ]
 
     for (valueType, raw) in parseExamples do
         printfn "  parseValue %A \"%s\" = %A" valueType raw (parseValue valueType raw)
@@ -411,14 +463,16 @@ let demoEnvFile () =
     let envPath = Path.Combine(Path.GetTempPath(), "unionconfig-example.env")
 
     let content =
-        [ "# Example .env file"
-          "DATABASE_URL=postgresql://localhost:5432/myapp"
-          "DATABASE_PORT=5432"
-          "API_KEY=sk-demo-key-abc123456"
-          "MAX_RETRIES=3"
-          "DEBUG_MODE=false"
-          "LOG_LEVEL=info"
-          "REQUEST_TIMEOUT=30.0" ]
+        [
+            "# Example .env file"
+            "DATABASE_URL=postgresql://localhost:5432/myapp"
+            "DATABASE_PORT=5432"
+            "API_KEY=sk-demo-key-abc123456"
+            "MAX_RETRIES=3"
+            "DEBUG_MODE=false"
+            "LOG_LEVEL=info"
+            "REQUEST_TIMEOUT=30.0"
+        ]
         |> String.concat "\n"
 
     File.WriteAllText(envPath, content)
@@ -467,12 +521,14 @@ let demoMasking () =
 
     // maskValue: mask sensitive values based on key name
     let examples =
-        [ ("DATABASE_URL", "postgresql://localhost:5432/myapp")
-          ("API_KEY", "sk-demo-key-abc123456")
-          ("JWT_SECRET", "super-long-secret-value-here")
-          ("PASSWORD", "p@ss")
-          ("DB_HOST", "localhost")
-          ("PORT", "5432") ]
+        [
+            ("DATABASE_URL", "postgresql://localhost:5432/myapp")
+            ("API_KEY", "sk-demo-key-abc123456")
+            ("JWT_SECRET", "super-long-secret-value-here")
+            ("PASSWORD", "p@ss")
+            ("DB_HOST", "localhost")
+            ("PORT", "5432")
+        ]
 
     for (key, value) in examples do
         let masked = maskValue key value
@@ -611,25 +667,31 @@ let demoSsmConfigStore () =
     let mutable paramStore = Map.empty<string, string>
 
     let operations: SsmOperations =
-        { GetParameter = fun path -> Map.tryFind path paramStore
-          SetParameter =
-            fun path value _isSecure ->
-                paramStore <- Map.add path value paramStore
-                Ok()
-          DeleteParameter =
-            fun path ->
-                paramStore <- Map.remove path paramStore
-                Ok()
-          GetParametersByPath = fun prefix -> paramStore |> Map.filter (fun k _ -> k.StartsWith(prefix)) |> Map.toList }
+        {
+            GetParameter = fun path -> Map.tryFind path paramStore
+            SetParameter =
+                fun path value _isSecure ->
+                    paramStore <- Map.add path value paramStore
+                    Ok()
+            DeleteParameter =
+                fun path ->
+                    paramStore <- Map.remove path paramStore
+                    Ok()
+            GetParametersByPath = fun prefix -> paramStore |> Map.filter (fun k _ -> k.StartsWith(prefix)) |> Map.toList
+        }
 
     // Map config var names to parameter-store paths, and flag which are secret.
     let store: SsmConfigStore =
-        { Operations = operations
-          PathMapping =
-            { ToPath = fun name -> $"/myapp/staging/%s{name}"
-              FromPath = fun path -> path.Replace("/myapp/staging/", "")
-              PathPrefix = "/myapp/staging/" }
-          IsSecret = fun name -> name = "API_KEY" }
+        {
+            Operations = operations
+            PathMapping =
+                {
+                    ToPath = fun name -> $"/myapp/staging/%s{name}"
+                    FromPath = fun path -> path.Replace("/myapp/staging/", "")
+                    PathPrefix = "/myapp/staging/"
+                }
+            IsSecret = fun name -> name = "API_KEY"
+        }
 
     let varNames = allDefs |> List.map (fun d -> d.Name) |> Array.ofList
 
@@ -795,53 +857,69 @@ type GroupedAppConfig =
 let groupedConfigDef: GroupedAppConfig -> ConfigVarDef<unit> =
     function
     | Database DbHost ->
-        { Name = "DB_HOST"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
+        {
+            Name = "DB_HOST"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
 
-          Doc =
-            { Description = "Database hostname"
-              HowToFind = "Check your database provider"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Database hostname"
+                    HowToFind = "Check your database provider"
+                    ManagementUrl = None
+                }
+        }
     | Database DbPort ->
-        { Name = "DB_PORT"
-          Provenance = Operator
-          ValueType = IntType
-          Requirement = Optional
-          IsSecret = false
-          Default = SeedAndFallback "5432"
+        {
+            Name = "DB_PORT"
+            Provenance = Operator
+            ValueType = IntType
+            Requirement = Optional
+            IsSecret = false
+            Default = SeedAndFallback "5432"
 
-          Doc =
-            { Description = "Database port number"
-              HowToFind = "Usually 5432 for PostgreSQL"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Database port number"
+                    HowToFind = "Usually 5432 for PostgreSQL"
+                    ManagementUrl = None
+                }
+        }
     | Api ApiEndpoint ->
-        { Name = "API_ENDPOINT"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
+        {
+            Name = "API_ENDPOINT"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
 
-          Doc =
-            { Description = "Base URL for the API"
-              HowToFind = "Check your API provider dashboard"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "Base URL for the API"
+                    HowToFind = "Check your API provider dashboard"
+                    ManagementUrl = None
+                }
+        }
     | Api ApiTimeout ->
-        { Name = "API_TIMEOUT"
-          Provenance = Operator
-          ValueType = IntType
-          Requirement = Optional
-          IsSecret = false
-          Default = RuntimeFallback "30"
+        {
+            Name = "API_TIMEOUT"
+            Provenance = Operator
+            ValueType = IntType
+            Requirement = Optional
+            IsSecret = false
+            Default = RuntimeFallback "30"
 
-          Doc =
-            { Description = "API request timeout in seconds"
-              HowToFind = "Set to desired timeout (default: 30)"
-              ManagementUrl = None } }
+            Doc =
+                {
+                    Description = "API request timeout in seconds"
+                    HowToFind = "Set to desired timeout (default: 30)"
+                    ManagementUrl = None
+                }
+        }
 
 let demoConfigRegistryGrouped () =
     printfn "== UnionConfig.ConfigRegistry.allDefsGrouped (nested DU) =="
@@ -873,10 +951,12 @@ let demoWriteEnvFile () =
     // Simulate current config values
     let currentValues =
         Map.ofList
-            [ ("DB_HOST", "localhost")
-              ("DB_PORT", "5432")
-              ("API_ENDPOINT", "https://api.example.com")
-              ("API_TIMEOUT", "60") ]
+            [
+                ("DB_HOST", "localhost")
+                ("DB_PORT", "5432")
+                ("API_ENDPOINT", "https://api.example.com")
+                ("API_TIMEOUT", "60")
+            ]
 
     // defaultSections: build EnvFileSection array from grouped defs + values
     // Uses group names as section headers and Doc.Description as comments
@@ -1000,17 +1080,21 @@ let demoDefaultValue () =
     printfn ""
 
     let awsRegion =
-        { Name = "AWS_REGION_DEMO"
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          // RuntimeFallback: Reader.read returns it when the env var is unset.
-          Default = RuntimeFallback "eu-central-1"
-          Doc =
-            { Description = "AWS region with static fallback"
-              HowToFind = "Defaults to eu-central-1 when unset"
-              ManagementUrl = None } }
+        {
+            Name = "AWS_REGION_DEMO"
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            // RuntimeFallback: Reader.read returns it when the env var is unset.
+            Default = RuntimeFallback "eu-central-1"
+            Doc =
+                {
+                    Description = "AWS region with static fallback"
+                    HowToFind = "Defaults to eu-central-1 when unset"
+                    ManagementUrl = None
+                }
+        }
 
     Environment.SetEnvironmentVariable("AWS_REGION_DEMO", null)
 
@@ -1025,16 +1109,20 @@ let demoDefaultValue () =
     | other -> printfn "  set        -> unexpected %A" other
 
     let badIntDef =
-        { Name = "RETRY_COUNT_DEMO"
-          Provenance = Operator
-          ValueType = IntType
-          Requirement = Required
-          IsSecret = false
-          Default = RuntimeFallback "not-an-int"
-          Doc =
-            { Description = "Retry count with malformed default"
-              HowToFind = "Demonstrates Error on bad default"
-              ManagementUrl = None } }
+        {
+            Name = "RETRY_COUNT_DEMO"
+            Provenance = Operator
+            ValueType = IntType
+            Requirement = Required
+            IsSecret = false
+            Default = RuntimeFallback "not-an-int"
+            Doc =
+                {
+                    Description = "Retry count with malformed default"
+                    HowToFind = "Demonstrates Error on bad default"
+                    ManagementUrl = None
+                }
+        }
 
     Environment.SetEnvironmentVariable("RETRY_COUNT_DEMO", null)
 

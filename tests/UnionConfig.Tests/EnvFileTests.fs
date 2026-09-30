@@ -312,14 +312,24 @@ module WriteEnvFileTests =
 
         try
             let sections =
-                [| { Header = "Database"
-                     Entries =
-                       [| { Name = "DB_HOST"
-                            Value = "localhost"
-                            Comment = Some "The database host" }
-                          { Name = "DB_PORT"
-                            Value = "5432"
-                            Comment = None } |] } |]
+                [|
+                    {
+                        Header = "Database"
+                        Entries =
+                            [|
+                                {
+                                    Name = "DB_HOST"
+                                    Value = "localhost"
+                                    Comment = Some "The database host"
+                                }
+                                {
+                                    Name = "DB_PORT"
+                                    Value = "5432"
+                                    Comment = None
+                                }
+                            |]
+                    }
+                |]
 
             writeEnvFile path [] sections
             let lines = File.ReadAllLines(path)
@@ -337,16 +347,30 @@ module WriteEnvFileTests =
 
         try
             let sections =
-                [| { Header = "Database"
-                     Entries =
-                       [| { Name = "DB_HOST"
-                            Value = "localhost"
-                            Comment = None } |] }
-                   { Header = "Auth"
-                     Entries =
-                       [| { Name = "API_KEY"
-                            Value = "abc"
-                            Comment = None } |] } |]
+                [|
+                    {
+                        Header = "Database"
+                        Entries =
+                            [|
+                                {
+                                    Name = "DB_HOST"
+                                    Value = "localhost"
+                                    Comment = None
+                                }
+                            |]
+                    }
+                    {
+                        Header = "Auth"
+                        Entries =
+                            [|
+                                {
+                                    Name = "API_KEY"
+                                    Value = "abc"
+                                    Comment = None
+                                }
+                            |]
+                    }
+                |]
 
             writeEnvFile path [] sections
             let lines = File.ReadAllLines(path)
@@ -365,19 +389,29 @@ module WriteEnvFileTests =
 
         try
             let headerLines =
-                [ "# ════════════════════════════════════════════════════════════════"
-                  "# MISSING CONFIG — fill these in first"
-                  "# ════════════════════════════════════════════════════════════════"
-                  "#"
-                  "# [Operator] DB_HOST — The database host"
-                  "" ]
+                [
+                    "# ════════════════════════════════════════════════════════════════"
+                    "# MISSING CONFIG — fill these in first"
+                    "# ════════════════════════════════════════════════════════════════"
+                    "#"
+                    "# [Operator] DB_HOST — The database host"
+                    ""
+                ]
 
             let sections =
-                [| { Header = "Database"
-                     Entries =
-                       [| { Name = "DB_HOST"
-                            Value = ""
-                            Comment = Some "The database host" } |] } |]
+                [|
+                    {
+                        Header = "Database"
+                        Entries =
+                            [|
+                                {
+                                    Name = "DB_HOST"
+                                    Value = ""
+                                    Comment = Some "The database host"
+                                }
+                            |]
+                    }
+                |]
 
             writeEnvFile path headerLines sections
             let lines = File.ReadAllLines(path)
@@ -395,11 +429,19 @@ module WriteEnvFileTests =
 
         try
             let sections =
-                [| { Header = "App"
-                     Entries =
-                       [| { Name = "PORT"
-                            Value = "3000"
-                            Comment = None } |] } |]
+                [|
+                    {
+                        Header = "App"
+                        Entries =
+                            [|
+                                {
+                                    Name = "PORT"
+                                    Value = "3000"
+                                    Comment = None
+                                }
+                            |]
+                    }
+                |]
 
             writeEnvFile path [] sections
             let lines = File.ReadAllLines(path)
@@ -414,16 +456,20 @@ module MissingEntriesHeaderTests =
     type Src = StackOutput of string
 
     let mkDef name (provenance: Provenance<Src>) requirement description : ConfigVarDef<Src> =
-        { Name = name
-          Provenance = provenance
-          ValueType = StringType
-          Requirement = requirement
-          IsSecret = false
-          Default = NoDefault
-          Doc =
-            { Description = description
-              HowToFind = ""
-              ManagementUrl = None } }
+        {
+            Name = name
+            Provenance = provenance
+            ValueType = StringType
+            Requirement = requirement
+            IsSecret = false
+            Default = NoDefault
+            Doc =
+                {
+                    Description = description
+                    HowToFind = ""
+                    ManagementUrl = None
+                }
+        }
 
     [<Fact>]
     let ``missingEntriesHeader returns empty list when all required values present`` () =
@@ -460,8 +506,10 @@ module MissingEntriesHeaderTests =
     [<Fact>]
     let ``missingEntriesHeader skips optional entries`` () =
         let defs =
-            [| mkDef "REQUIRED_VAR" Operator Required "Must have"
-               mkDef "OPTIONAL_VAR" Operator Optional "Nice to have" |]
+            [|
+                mkDef "REQUIRED_VAR" Operator Required "Must have"
+                mkDef "OPTIONAL_VAR" Operator Optional "Nice to have"
+            |]
 
         let values = Map.empty
         let header = missingEntriesHeader defs values
@@ -492,7 +540,9 @@ module MissingEntriesHeaderTests =
     [<Fact>]
     let ``missingEntriesHeader shows Provisioned(Fetched) tag`` () =
         let defs =
-            [| mkDef "VPC_ID" (Provisioned(Fetched(StackOutput "VpcId"))) Required "VPC identifier" |]
+            [|
+                mkDef "VPC_ID" (Provisioned(Fetched(StackOutput "VpcId"))) Required "VPC identifier"
+            |]
 
         let values = Map.empty
         let header = missingEntriesHeader defs values
@@ -514,16 +564,20 @@ module MissingEntriesHeaderTests =
 
 module DefaultSectionsTests =
     let mkDef name description : ConfigVarDef<unit> =
-        { Name = name
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Required
-          IsSecret = false
-          Default = NoDefault
-          Doc =
-            { Description = description
-              HowToFind = ""
-              ManagementUrl = None } }
+        {
+            Name = name
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Required
+            IsSecret = false
+            Default = NoDefault
+            Doc =
+                {
+                    Description = description
+                    HowToFind = ""
+                    ManagementUrl = None
+                }
+        }
 
     [<Fact>]
     let ``defaultSections creates sections from grouped defs`` () =

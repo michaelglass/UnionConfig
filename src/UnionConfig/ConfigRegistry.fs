@@ -17,36 +17,38 @@ let private enumerateAll<'T> () : 'T array =
 
     let cases = FSharpType.GetUnionCases(ty)
 
-    [| for case in cases do
-           let fields = case.GetFields()
+    [|
+        for case in cases do
+            let fields = case.GetFields()
 
-           if fields.Length = 0 then
-               yield FSharpValue.MakeUnion(case, [||]) :?> 'T
-           elif fields.Length = 1 && FSharpType.IsUnion(fields.[0].PropertyType) then
-               let innerType = fields.[0].PropertyType
-               let innerCases = FSharpType.GetUnionCases(innerType)
+            if fields.Length = 0 then
+                yield FSharpValue.MakeUnion(case, [||]) :?> 'T
+            elif fields.Length = 1 && FSharpType.IsUnion(fields.[0].PropertyType) then
+                let innerType = fields.[0].PropertyType
+                let innerCases = FSharpType.GetUnionCases(innerType)
 
-               for innerCase in innerCases do
-                   let innerFields = innerCase.GetFields()
+                for innerCase in innerCases do
+                    let innerFields = innerCase.GetFields()
 
-                   if innerFields.Length = 0 then
-                       let innerValue = FSharpValue.MakeUnion(innerCase, [||])
-                       yield FSharpValue.MakeUnion(case, [| innerValue |]) :?> 'T
-                   elif innerFields.Length = 1 && FSharpType.IsUnion(innerFields.[0].PropertyType) then
-                       // Third level of nesting: the inner case wraps a further DU.
-                       // enumerateAll only descends two levels, so reject this with a
-                       // depth-limit message rather than the generic "has fields" one.
-                       failwithf
-                           "Nested DU case '%s.%s' nests another DU — only two levels of nesting are supported"
-                           case.Name
-                           innerCase.Name
-                   else
-                       failwithf
-                           "Nested DU case '%s.%s' has fields — only fieldless leaf cases are supported"
-                           case.Name
-                           innerCase.Name
-           else
-               failwithf "Case '%s' has unsupported payload — expected no fields or a single nested DU" case.Name |]
+                    if innerFields.Length = 0 then
+                        let innerValue = FSharpValue.MakeUnion(innerCase, [||])
+                        yield FSharpValue.MakeUnion(case, [| innerValue |]) :?> 'T
+                    elif innerFields.Length = 1 && FSharpType.IsUnion(innerFields.[0].PropertyType) then
+                        // Third level of nesting: the inner case wraps a further DU.
+                        // enumerateAll only descends two levels, so reject this with a
+                        // depth-limit message rather than the generic "has fields" one.
+                        failwithf
+                            "Nested DU case '%s.%s' nests another DU — only two levels of nesting are supported"
+                            case.Name
+                            innerCase.Name
+                    else
+                        failwithf
+                            "Nested DU case '%s.%s' has fields — only fieldless leaf cases are supported"
+                            case.Name
+                            innerCase.Name
+            else
+                failwithf "Case '%s' has unsupported payload — expected no fields or a single nested DU" case.Name
+    |]
 
 /// Get the wrapper case name for a value (Some for nested, None for flat).
 let private getWrapperCaseName<'T> (value: 'T) : string option =
@@ -66,12 +68,12 @@ let private getWrapperCaseName<'T> (value: 'T) : string option =
 /// Discover all cases of a DU, map through toDef function. Returns flat array.
 /// `'FetchSource` is inferred from `toDef`; call as `allDefs configDef`.
 let allDefs (toDef: 'T -> ConfigVarDef<'FetchSource>) : ConfigVarDef<'FetchSource> array =
-    enumerateAll<'T> () |> Array.map toDef
+    enumerateAll<'T>() |> Array.map toDef
 
 /// Discover all cases and return (groupName, defs) pairs.
 /// Group name = wrapper case name for nested DUs, "" for flat cases.
 let allDefsGrouped (toDef: 'T -> ConfigVarDef<'FetchSource>) : (string * ConfigVarDef<'FetchSource> array) array =
-    let allValues = enumerateAll<'T> ()
+    let allValues = enumerateAll<'T>()
 
     allValues
     |> Array.groupBy (fun v ->

@@ -11,19 +11,23 @@ module DefaultsFromDefsTests =
     // `defaultsFromDefs` keys off the *seed* half of the `Default` axis, so map the
     // helper's `string option` to `SeedOnly` / `NoDefault`.
     let private mkDef name (seed: string option) : ConfigVarDef<unit> =
-        { Name = name
-          Provenance = Operator
-          ValueType = StringType
-          Requirement = Optional
-          IsSecret = false
-          Default =
-            match seed with
-            | Some v -> SeedOnly v
-            | None -> NoDefault
-          Doc =
-            { Description = ""
-              HowToFind = ""
-              ManagementUrl = None } }
+        {
+            Name = name
+            Provenance = Operator
+            ValueType = StringType
+            Requirement = Optional
+            IsSecret = false
+            Default =
+                match seed with
+                | Some v -> SeedOnly v
+                | None -> NoDefault
+            Doc =
+                {
+                    Description = ""
+                    HowToFind = ""
+                    ManagementUrl = None
+                }
+        }
 
     [<Fact>]
     let ``emits (name, default) for defs with DefaultValue when store entry is missing`` () =
@@ -56,21 +60,27 @@ module DefaultsFromDefsTests =
         // Ambient (runtime-injected) and Provisioned (Fetched …) have no store entry to seed,
         // so a seed default on them must never be emitted — ADR 0049 makes that combo a no-op.
         let nonPersisted name provenance : ConfigVarDef<unit> =
-            { Name = name
-              Provenance = provenance
-              ValueType = StringType
-              Requirement = Optional
-              IsSecret = false
-              Default = SeedOnly "should-not-seed"
-              Doc =
-                { Description = ""
-                  HowToFind = ""
-                  ManagementUrl = None } }
+            {
+                Name = name
+                Provenance = provenance
+                ValueType = StringType
+                Requirement = Optional
+                IsSecret = false
+                Default = SeedOnly "should-not-seed"
+                Doc =
+                    {
+                        Description = ""
+                        HowToFind = ""
+                        ManagementUrl = None
+                    }
+            }
 
         let defs =
-            [ nonPersisted "IAM_TOKEN" Ambient
-              nonPersisted "S3_BUCKET" (Provisioned(Fetched()))
-              mkDef "DB_PORT" (Some "5432") ]
+            [
+                nonPersisted "IAM_TOKEN" Ambient
+                nonPersisted "S3_BUCKET" (Provisioned(Fetched()))
+                mkDef "DB_PORT" (Some "5432")
+            ]
 
         let result = defaultsFromDefs defs Map.empty
         test <@ result = [| ("DB_PORT", "5432") |] @>
@@ -167,10 +177,12 @@ module PopulateDefaultsTests =
             current |> Map.tryFind name |> Option.forall System.String.IsNullOrEmpty
 
         let getDefaults (current: Map<string, string>) =
-            [| if isMissing "A" current then
-                   ("A", "a-default")
-               if not (isMissing "A" current) && isMissing "B" current then
-                   ("B", "b-default") |]
+            [|
+                if isMissing "A" current then
+                    ("A", "a-default")
+                if not (isMissing "A" current) && isMissing "B" current then
+                    ("B", "b-default")
+            |]
 
         let writeLocalFile _ = ()
 
@@ -367,8 +379,10 @@ module EditConfigWithTests =
                 true
 
             let verifyChanges _ _ =
-                [| ("DB_HOST", VerifySuccess "ok")
-                   ("API_KEY", VerifySkipped "managed by infra") |]
+                [|
+                    ("DB_HOST", VerifySuccess "ok")
+                    ("API_KEY", VerifySkipped "managed by infra")
+                |]
 
             editConfigWith runEditor getConfirmation loadConfig setValue writeConfigFile verifyChanges
 

@@ -325,25 +325,31 @@ open UnionConfig.SsmConfigStore
 let mutable paramStore = Map.empty<string, string>
 
 let operations: SsmOperations =
-    { GetParameter = fun path -> Map.tryFind path paramStore
-      SetParameter =
-        fun path value _isSecure ->
-            paramStore <- Map.add path value paramStore
-            Ok()
-      DeleteParameter =
-        fun path ->
-            paramStore <- Map.remove path paramStore
-            Ok()
-      GetParametersByPath = fun prefix -> paramStore |> Map.filter (fun k _ -> k.StartsWith(prefix)) |> Map.toList }
+    {
+        GetParameter = fun path -> Map.tryFind path paramStore
+        SetParameter =
+            fun path value _isSecure ->
+                paramStore <- Map.add path value paramStore
+                Ok()
+        DeleteParameter =
+            fun path ->
+                paramStore <- Map.remove path paramStore
+                Ok()
+        GetParametersByPath = fun prefix -> paramStore |> Map.filter (fun k _ -> k.StartsWith(prefix)) |> Map.toList
+    }
 
 // Map config var names to parameter-store paths, and flag which are secret.
 let store: SsmConfigStore =
-    { Operations = operations
-      PathMapping =
-        { ToPath = fun name -> $"/myapp/staging/%s{name}"
-          FromPath = fun path -> path.Replace("/myapp/staging/", "")
-          PathPrefix = "/myapp/staging/" }
-      IsSecret = fun name -> name = "API_KEY" }
+    {
+        Operations = operations
+        PathMapping =
+            {
+                ToPath = fun name -> $"/myapp/staging/%s{name}"
+                FromPath = fun path -> path.Replace("/myapp/staging/", "")
+                PathPrefix = "/myapp/staging/"
+            }
+        IsSecret = fun name -> name = "API_KEY"
+    }
 
 let varNames = allDefs |> List.map (fun d -> d.Name) |> Array.ofList
 
