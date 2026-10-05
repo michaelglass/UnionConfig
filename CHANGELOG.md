@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix: the NuGet package includes the README, so nuget.org shows it
+
 ## 0.6.0-alpha.3 - 2026-09-30
 
 - fix: the package's repository link on nuget.org points to https://github.com/michaelglass/UnionConfig (was the non-existent `union-config`) (#2)

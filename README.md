@@ -375,7 +375,7 @@ editConfig loadConfigFn setValueFn writeConfigFileFn verifyChangesFn
 
 ## Reference
 
-See the [Example App](examples/ExampleApp/Program.fs) for a complete working example. Run with `mise run example`.
+See the [Example App](https://github.com/michaelglass/UnionConfig/blob/main/examples/ExampleApp/Program.fs) for a complete working example. Run with `mise run example`.
 
 <!-- sync:types:start -->
 ### Types
